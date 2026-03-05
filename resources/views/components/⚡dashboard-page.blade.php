@@ -186,7 +186,7 @@ new class extends Component {
 
                     @forelse($this->recentTickets as $ticket)
 
-                        <a href="{{ route('tickets.show', $ticket->id) }}"
+                        <a href="{{ route('tickets.detail', $ticket->id) }}"
                             class="block py-4 px-4 rounded-xl hover:bg-gray-50 transition border-b">
 
                             <div class="flex justify-between items-center">

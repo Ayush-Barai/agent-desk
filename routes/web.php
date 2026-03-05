@@ -28,6 +28,8 @@ Route::middleware('auth')->group(function () {
         ->name('dashboard');
 
     Route::livewire('/tickets/create', 'tickets.create-ticket')->name('tickets.create');
+    Route::livewire('/tickets/{ticketId}', 'tickets.ticket-detail')
+    ->name('tickets.detail');
 
     Route::post('/logout', function () {
         Auth::logout();

@@ -33,7 +33,7 @@ new class extends Component {
         <div class="space-y-4">
             @forelse ($this->tickets as $ticket)
 
-                <a href="{{ route('tickets.show', $ticket->id) }}"
+                <a href="{{ route('tickets.detail', $ticket->id) }}"
                    class="block p-4 border rounded-lg hover:bg-gray-50">
 
                     <div class="flex justify-between">
