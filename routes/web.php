@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Http\Controllers\ProfileController;
+use App\Models\Ticket;
 use Illuminate\Contracts\View\Factory;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Route;
@@ -18,6 +19,8 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
         ->name('requester.tickets.')
         ->group(function (): void {
             Route::get('/', fn (): Factory|View => view('requester.tickets.index'))->name('index');
+            Route::get('/create', fn (): Factory|View => view('requester.tickets.create'))->name('create');
+            Route::get('/{ticket}', fn (Ticket $ticket): Factory|View => view('requester.tickets.show', ['ticket' => $ticket]))->name('show');
         });
 
     // Agent routes
