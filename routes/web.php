@@ -28,7 +28,9 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
         ->prefix('agent')
         ->name('agent.')
         ->group(function (): void {
+            Route::get('/triage', fn (): Factory|View => view('agent.triage.index'))->name('triage.index');
             Route::get('/tickets', fn (): Factory|View => view('agent.tickets.index'))->name('tickets.index');
+            Route::get('/tickets/{ticket}', fn (Ticket $ticket): Factory|View => view('agent.tickets.show', ['ticket' => $ticket]))->name('tickets.show');
         });
 
     // Admin routes
