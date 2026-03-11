@@ -270,11 +270,94 @@
             </div>
         </div>
 
-        {{-- AI Suggested Reply Placeholder --}}
+        {{-- AI Reply Draft Panel --}}
         <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg border-l-4 border-purple-400">
             <div class="p-6">
-                <h4 class="text-md font-semibold text-gray-900 mb-2">AI Suggested Reply</h4>
-                <p class="text-sm text-gray-500 italic">AI reply drafts will appear here when available.</p>
+                <div class="flex items-center justify-between mb-4">
+                    <h4 class="text-md font-semibold text-gray-900">AI Suggested Reply</h4>
+                    <button wire:click="generateReply" type="button"
+                        class="inline-flex items-center px-3 py-1.5 bg-purple-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-purple-700 transition ease-in-out duration-150">
+                        <span wire:loading.remove wire:target="generateReply">Generate Reply</span>
+                        <span wire:loading wire:target="generateReply">Generating...</span>
+                    </button>
+                </div>
+
+                @if($latestReplyDraftRun)
+                    @if(in_array($latestReplyDraftRun->status->value, ['queued', 'running']))
+                        <div class="text-sm text-blue-600" wire:poll.2s>
+                            <span class="inline-flex items-center gap-1">
+                                @if($latestReplyDraftRun->progress_state)
+                                    {{ $latestReplyDraftRun->progress_state }}...
+                                @else
+                                    {{ $latestReplyDraftRun->status->label() }}...
+                                @endif
+                            </span>
+                        </div>
+                    @elseif($latestReplyDraftRun->status->value === 'succeeded' && $latestReplyDraftRun->output_json)
+                        <div class="space-y-3">
+                            <div>
+                                <span class="text-xs font-medium text-gray-500 uppercase">Draft Reply</span>
+                                <div class="mt-1 p-3 bg-gray-50 rounded-md text-sm text-gray-700 whitespace-pre-wrap">{{ $latestReplyDraftRun->output_json['draft_reply'] ?? '—' }}</div>
+                            </div>
+
+                            <button wire:click="applyDraftReply('{{ $latestReplyDraftRun->id }}')" type="button"
+                                class="w-full inline-flex justify-center items-center px-3 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 transition">
+                                Use This Draft
+                            </button>
+
+                            @if(!empty($latestReplyDraftRun->output_json['next_steps']))
+                                <div>
+                                    <span class="text-xs font-medium text-gray-500 uppercase">Next Steps</span>
+                                    <ul class="list-disc list-inside mt-1 space-y-1">
+                                        @foreach($latestReplyDraftRun->output_json['next_steps'] as $step)
+                                            <li class="text-sm text-gray-700">{{ $step }}</li>
+                                        @endforeach
+                                    </ul>
+                                </div>
+                            @endif
+
+                            @if(!empty($latestReplyDraftRun->output_json['risk_flags']))
+                                <div>
+                                    <span class="text-xs font-medium text-gray-500 uppercase">Risk Flags</span>
+                                    <ul class="list-disc list-inside mt-1 space-y-1">
+                                        @foreach($latestReplyDraftRun->output_json['risk_flags'] as $flag)
+                                            <li class="text-sm text-red-700">{{ $flag }}</li>
+                                        @endforeach
+                                    </ul>
+                                </div>
+                            @endif
+
+                            @if(!empty($latestReplyDraftRun->output_json['retrieved_kb_snippets']))
+                                <div>
+                                    <span class="text-xs font-medium text-gray-500 uppercase">Retrieved KB Articles</span>
+                                    <div class="mt-1 space-y-2">
+                                        @foreach($latestReplyDraftRun->output_json['retrieved_kb_snippets'] as $snippet)
+                                            <div class="p-2 bg-purple-50 rounded text-sm">
+                                                <span class="font-medium text-purple-800">{{ $snippet['title'] ?? 'Untitled' }}</span>
+                                                <p class="text-gray-600 text-xs mt-0.5">{{ $snippet['excerpt'] ?? '' }}</p>
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                </div>
+                            @endif
+
+                            @if(!empty($latestReplyDraftRun->output_json['used_kb_snippets']))
+                                <div>
+                                    <span class="text-xs font-medium text-gray-500 uppercase">Cited KB Sources</span>
+                                    <div class="mt-1 space-y-1">
+                                        @foreach($latestReplyDraftRun->output_json['used_kb_snippets'] as $snippet)
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800 mr-1">{{ $snippet['title'] ?? 'Untitled' }}</span>
+                                        @endforeach
+                                    </div>
+                                </div>
+                            @endif
+                        </div>
+                    @elseif($latestReplyDraftRun->status->value === 'failed')
+                        <p class="text-sm text-red-600">Reply draft failed: {{ $latestReplyDraftRun->error_message ?? 'Unknown error' }}</p>
+                    @endif
+                @else
+                    <p class="text-sm text-gray-500 italic">Click "Generate Reply" to draft an AI-powered response. Any text in the reply box will be used as a seed instruction.</p>
+                @endif
             </div>
         </div>
 

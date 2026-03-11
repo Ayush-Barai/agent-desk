@@ -5,12 +5,14 @@ declare(strict_types=1);
 namespace App\Livewire\Agent;
 
 use App\Actions\CreateAuditLog;
+use App\DTOs\ReplyDraftInput;
 use App\DTOs\TriageInput;
 use App\Enums\AiRunStatus;
 use App\Enums\AiRunType;
 use App\Enums\TicketMessageType;
 use App\Enums\TicketPriority;
 use App\Enums\TicketStatus;
+use App\Jobs\DraftTicketReplyJob;
 use App\Jobs\RunTicketTriageJob;
 use App\Models\AiRun;
 use App\Models\Category;
@@ -419,6 +421,95 @@ final class AgentTicketDetail extends Component
             ->first();
     }
 
+    public function generateReply(): void
+    {
+        /** @var User $user */
+        $user = Auth::user();
+        $ticket = Ticket::query()
+            ->with(['requester'])
+            ->findOrFail($this->ticketId);
+
+        abort_unless($user->can('create', AiRun::class), 403);
+
+        /** @var list<array{role: string, body: string}> $messageHistory */
+        $messageHistory = TicketMessage::query()
+            ->where('ticket_id', $ticket->id)
+            ->where('type', TicketMessageType::Public)
+            ->where('is_ai_draft', false)
+            ->with(['author'])
+            ->oldest()
+            ->get()
+            ->map(fn (TicketMessage $m): array => [
+                'role' => $m->user_id === $ticket->requester_id ? 'requester' : 'agent',
+                'body' => $m->body,
+            ])
+            ->values()
+            ->all();
+
+        $input = new ReplyDraftInput(
+            ticketId: $ticket->id,
+            subject: $ticket->subject,
+            description: $ticket->description,
+            messageHistory: $messageHistory,
+            kbSnippets: [],
+        );
+
+        $seedText = $this->replyBody;
+
+        $inputHash = hash('sha256', json_encode([
+            'ticket_id' => $input->ticketId,
+            'subject' => $input->subject,
+            'description' => $input->description,
+            'message_count' => count($input->messageHistory),
+            'seed_text' => $seedText,
+        ], JSON_THROW_ON_ERROR));
+
+        $aiRun = AiRun::query()->create([
+            'ticket_id' => $ticket->id,
+            'initiated_by_user_id' => $user->id,
+            'run_type' => AiRunType::ReplyDraft,
+            'status' => AiRunStatus::Queued,
+            'progress_state' => 'Retrieving',
+            'input_hash' => $inputHash,
+            'input_json' => [
+                'ticket_id' => $input->ticketId,
+                'subject' => $input->subject,
+                'description' => $input->description,
+                'message_count' => count($input->messageHistory),
+                'seed_text' => $seedText,
+            ],
+        ]);
+
+        dispatch(new DraftTicketReplyJob($aiRun->id, $input, $seedText));
+    }
+
+    public function applyDraftReply(string $aiRunId): void
+    {
+        $aiRun = AiRun::query()->findOrFail($aiRunId);
+
+        /** @var array{draft_reply?: string}|null $output */
+        $output = $aiRun->output_json;
+
+        if ($output === null) {
+            return;
+        }
+
+        $draftReply = $output['draft_reply'] ?? '';
+
+        if ($draftReply !== '') {
+            $this->replyBody = $draftReply;
+        }
+    }
+
+    public function getLatestReplyDraftRun(): ?AiRun
+    {
+        return AiRun::query()
+            ->where('ticket_id', $this->ticketId)
+            ->where('run_type', AiRunType::ReplyDraft)
+            ->latest()
+            ->first();
+    }
+
     /**
      * @return list<TicketStatus>
      */
@@ -448,6 +539,7 @@ final class AgentTicketDetail extends Component
             'statuses' => $this->getStatuses(),
             'priorities' => $this->getPriorities(),
             'latestTriageRun' => $this->getLatestTriageRun(),
+            'latestReplyDraftRun' => $this->getLatestReplyDraftRun(),
         ]);
     }
 }
