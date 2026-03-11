@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Http\Controllers\AttachmentDownloadController;
 use App\Http\Controllers\ProfileController;
 use App\Models\Ticket;
 use Illuminate\Contracts\View\Factory;
@@ -32,6 +33,9 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
             Route::get('/tickets', fn (): Factory|View => view('agent.tickets.index'))->name('tickets.index');
             Route::get('/tickets/{ticket}', fn (Ticket $ticket): Factory|View => view('agent.tickets.show', ['ticket' => $ticket]))->name('tickets.show');
         });
+
+    // Attachment download
+    Route::get('/attachments/{attachment}/download', AttachmentDownloadController::class)->name('attachments.download');
 
     // Admin routes
     Route::middleware('role:admin')
