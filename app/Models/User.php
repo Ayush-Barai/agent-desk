@@ -10,6 +10,7 @@ use Database\Factories\UserFactory;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Override;
@@ -82,5 +83,45 @@ final class User extends Authenticatable implements MustVerifyEmail
         }
 
         return $this->isAgent();
+    }
+
+    /**
+     * @return HasMany<Ticket, $this>
+     */
+    public function requesterTickets(): HasMany
+    {
+        return $this->hasMany(Ticket::class, 'requester_id');
+    }
+
+    /**
+     * @return HasMany<Ticket, $this>
+     */
+    public function assignedTickets(): HasMany
+    {
+        return $this->hasMany(Ticket::class, 'assigned_to_user_id');
+    }
+
+    /**
+     * @return HasMany<TicketMessage, $this>
+     */
+    public function ticketMessages(): HasMany
+    {
+        return $this->hasMany(TicketMessage::class, 'user_id');
+    }
+
+    /**
+     * @return HasMany<AiRun, $this>
+     */
+    public function aiRuns(): HasMany
+    {
+        return $this->hasMany(AiRun::class, 'initiated_by_user_id');
+    }
+
+    /**
+     * @return HasMany<AuditLog, $this>
+     */
+    public function auditLogs(): HasMany
+    {
+        return $this->hasMany(AuditLog::class, 'actor_user_id');
     }
 }
