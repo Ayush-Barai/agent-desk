@@ -2,4 +2,7 @@
 
 declare(strict_types=1);
 
-//
+use App\Jobs\CheckOverdueTargetsJob;
+use Illuminate\Support\Facades\Schedule;
+
+Schedule::job(new CheckOverdueTargetsJob())->everyFiveMinutes();

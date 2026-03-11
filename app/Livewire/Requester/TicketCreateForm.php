@@ -10,6 +10,7 @@ use App\Enums\TicketMessageType;
 use App\Enums\TicketStatus;
 use App\Models\AiRun;
 use App\Models\Category;
+use App\Models\SupportTargetConfig;
 use App\Models\Ticket;
 use App\Models\TicketAttachment;
 use App\Models\TicketMessage;
@@ -56,6 +57,8 @@ final class TicketCreateForm extends Component
         $user = Auth::user();
 
         return DB::transaction(function () use ($user): mixed {
+            $targetConfig = SupportTargetConfig::query()->first();
+
             $ticket = Ticket::query()->create([
                 'requester_id' => $user->id,
                 'category_id' => $this->categoryId !== '' ? $this->categoryId : null,
@@ -63,6 +66,8 @@ final class TicketCreateForm extends Component
                 'description' => $this->description,
                 'status' => TicketStatus::New,
                 'last_requester_message_at' => now(),
+                'first_response_due_at' => $targetConfig instanceof SupportTargetConfig ? now()->addHours($targetConfig->first_response_hours) : null,
+                'resolution_due_at' => $targetConfig instanceof SupportTargetConfig ? now()->addHours($targetConfig->resolution_hours) : null,
             ]);
 
             $message = TicketMessage::query()->create([

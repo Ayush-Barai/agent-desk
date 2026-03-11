@@ -317,7 +317,13 @@ final class AgentTicketDetail extends Component
         }
 
         if ($messageType === TicketMessageType::Public) {
-            $ticket->update(['last_agent_message_at' => now()]);
+            $updateData = ['last_agent_message_at' => now()];
+
+            if ($ticket->first_responded_at === null) {
+                $updateData['first_responded_at'] = now();
+            }
+
+            $ticket->update($updateData);
         }
 
         $this->reset('replyBody', 'replyAttachments');

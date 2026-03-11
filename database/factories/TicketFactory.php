@@ -71,4 +71,25 @@ final class TicketFactory extends Factory
             'assigned_to_user_id' => $user->id,
         ]);
     }
+
+    public function overdueResponse(): self
+    {
+        return $this->state(fn (array $attributes): array => [
+            'status' => TicketStatus::New,
+            'first_response_due_at' => now()->subHour(),
+            'first_responded_at' => null,
+            'overdue_response_notified_at' => null,
+        ]);
+    }
+
+    public function overdueResolution(): self
+    {
+        return $this->state(fn (array $attributes): array => [
+            'status' => TicketStatus::InProgress,
+            'priority' => TicketPriority::Medium,
+            'resolution_due_at' => now()->subHour(),
+            'resolved_at' => null,
+            'overdue_resolution_notified_at' => null,
+        ]);
+    }
 }

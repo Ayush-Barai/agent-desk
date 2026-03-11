@@ -33,6 +33,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property-read CarbonInterface|null $triaged_at
  * @property-read CarbonInterface|null $last_requester_message_at
  * @property-read CarbonInterface|null $last_agent_message_at
+ * @property-read CarbonInterface|null $overdue_response_notified_at
+ * @property-read CarbonInterface|null $overdue_resolution_notified_at
  * @property-read CarbonInterface $created_at
  * @property-read CarbonInterface $updated_at
  */
@@ -66,6 +68,8 @@ final class Ticket extends Model
             'triaged_at' => 'datetime',
             'last_requester_message_at' => 'datetime',
             'last_agent_message_at' => 'datetime',
+            'overdue_response_notified_at' => 'datetime',
+            'overdue_resolution_notified_at' => 'datetime',
         ];
     }
 
