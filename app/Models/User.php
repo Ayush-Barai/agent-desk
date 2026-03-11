@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Enums\UserRole;
 use Carbon\CarbonInterface;
 use Database\Factories\UserFactory;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
@@ -17,6 +18,7 @@ use Override;
  * @property-read string $id
  * @property-read string $name
  * @property-read string $email
+ * @property-read UserRole $role
  * @property-read CarbonInterface|null $email_verified_at
  * @property-read string $password
  * @property-read string|null $remember_token
@@ -49,11 +51,36 @@ final class User extends Authenticatable implements MustVerifyEmail
             'id' => 'string',
             'name' => 'string',
             'email' => 'string',
+            'role' => UserRole::class,
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'remember_token' => 'string',
             'created_at' => 'datetime',
             'updated_at' => 'datetime',
         ];
+    }
+
+    public function isAdmin(): bool
+    {
+        return $this->role === UserRole::Admin;
+    }
+
+    public function isAgent(): bool
+    {
+        return $this->role === UserRole::Agent;
+    }
+
+    public function isRequester(): bool
+    {
+        return $this->role === UserRole::Requester;
+    }
+
+    public function isStaff(): bool
+    {
+        if ($this->isAdmin()) {
+            return true;
+        }
+
+        return $this->isAgent();
     }
 }

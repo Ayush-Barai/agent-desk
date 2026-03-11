@@ -15,11 +15,33 @@
                     <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
                         {{ __('Dashboard') }}
                     </x-nav-link>
+
+                    @if(auth()->user()->isRequester())
+                        <x-nav-link :href="route('requester.tickets.index')" :active="request()->routeIs('requester.tickets.*')">
+                            {{ __('My Tickets') }}
+                        </x-nav-link>
+                    @endif
+
+                    @if(auth()->user()->isAgent() || auth()->user()->isAdmin())
+                        <x-nav-link :href="route('agent.tickets.index')" :active="request()->routeIs('agent.tickets.*')">
+                            {{ __('Ticket Queue') }}
+                        </x-nav-link>
+                    @endif
+
+                    @if(auth()->user()->isAdmin())
+                        <x-nav-link :href="route('admin.users.index')" :active="request()->routeIs('admin.*')">
+                            {{ __('Admin') }}
+                        </x-nav-link>
+                    @endif
                 </div>
             </div>
 
             <!-- Settings Dropdown -->
             <div class="hidden sm:flex sm:items-center sm:ms-6">
+                <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium {{ auth()->user()->role->color() }} me-3">
+                    {{ auth()->user()->role->label() }}
+                </span>
+
                 <x-dropdown align="right" width="48">
                     <x-slot name="trigger">
                         <button class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 bg-white hover:text-gray-700 focus:outline-none transition ease-in-out duration-150">
@@ -70,6 +92,24 @@
             <x-responsive-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
                 {{ __('Dashboard') }}
             </x-responsive-nav-link>
+
+            @if(auth()->user()->isRequester())
+                <x-responsive-nav-link :href="route('requester.tickets.index')" :active="request()->routeIs('requester.tickets.*')">
+                    {{ __('My Tickets') }}
+                </x-responsive-nav-link>
+            @endif
+
+            @if(auth()->user()->isAgent() || auth()->user()->isAdmin())
+                <x-responsive-nav-link :href="route('agent.tickets.index')" :active="request()->routeIs('agent.tickets.*')">
+                    {{ __('Ticket Queue') }}
+                </x-responsive-nav-link>
+            @endif
+
+            @if(auth()->user()->isAdmin())
+                <x-responsive-nav-link :href="route('admin.users.index')" :active="request()->routeIs('admin.*')">
+                    {{ __('Admin') }}
+                </x-responsive-nav-link>
+            @endif
         </div>
 
         <!-- Responsive Settings Options -->
