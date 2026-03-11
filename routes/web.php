@@ -43,6 +43,10 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
         ->name('admin.')
         ->group(function (): void {
             Route::get('/users', fn (): Factory|View => view('admin.users.index'))->name('users.index');
+            Route::get('/categories', fn (): Factory|View => view('admin.categories.index'))->name('categories.index');
+            Route::get('/macros', fn (): Factory|View => view('admin.macros.index'))->name('macros.index');
+            Route::get('/kb-articles', fn (): Factory|View => view('admin.kb-articles.index'))->name('kb-articles.index');
+            Route::get('/targets', fn (): Factory|View => view('admin.targets.index'))->name('targets.index');
         });
 });
 
