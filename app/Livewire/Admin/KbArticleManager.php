@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Livewire\Admin;
 
+use App\Actions\CreateAuditLog;
 use App\Models\KnowledgeBaseArticle;
 use App\Models\User;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -64,11 +65,13 @@ final class KbArticleManager extends Component
 
         $this->validate($rules);
 
+        $audit = new CreateAuditLog();
         $slug = Str::slug($this->title);
 
         if ($this->editingId !== '') {
             $article = KnowledgeBaseArticle::query()->findOrFail($this->editingId);
             abort_unless($user->can('update', $article), 403);
+            $oldValues = ['title' => $article->title, 'is_published' => $article->is_published];
             $article->update([
                 'title' => $this->title,
                 'slug' => $slug,
@@ -76,15 +79,28 @@ final class KbArticleManager extends Component
                 'excerpt' => $this->excerpt !== '' ? $this->excerpt : null,
                 'is_published' => $this->is_published,
             ]);
+            $audit->execute(
+                action: 'kb_article_updated',
+                actor: $user,
+                auditable: $article,
+                oldValues: $oldValues,
+                newValues: ['title' => $this->title, 'is_published' => $this->is_published],
+            );
         } else {
             abort_unless($user->can('create', KnowledgeBaseArticle::class), 403);
-            KnowledgeBaseArticle::query()->create([
+            $article = KnowledgeBaseArticle::query()->create([
                 'title' => $this->title,
                 'slug' => $slug,
                 'body' => $this->body,
                 'excerpt' => $this->excerpt !== '' ? $this->excerpt : null,
                 'is_published' => $this->is_published,
             ]);
+            $audit->execute(
+                action: 'kb_article_created',
+                actor: $user,
+                auditable: $article,
+                newValues: ['title' => $this->title, 'is_published' => $this->is_published],
+            );
         }
 
         $this->resetForm();
@@ -97,6 +113,12 @@ final class KbArticleManager extends Component
         $user = Auth::user();
         $article = KnowledgeBaseArticle::query()->findOrFail($id);
         abort_unless($user->can('delete', $article), 403);
+        new CreateAuditLog()->execute(
+            action: 'kb_article_deleted',
+            actor: $user,
+            auditable: $article,
+            oldValues: ['title' => $article->title],
+        );
         $article->delete();
     }
 

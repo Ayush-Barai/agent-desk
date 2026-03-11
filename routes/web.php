@@ -47,6 +47,7 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
             Route::get('/macros', fn (): Factory|View => view('admin.macros.index'))->name('macros.index');
             Route::get('/kb-articles', fn (): Factory|View => view('admin.kb-articles.index'))->name('kb-articles.index');
             Route::get('/targets', fn (): Factory|View => view('admin.targets.index'))->name('targets.index');
+            Route::get('/audit-logs', fn (): Factory|View => view('admin.audit-logs.index'))->name('audit-logs.index');
         });
 });
 

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Livewire\Agent;
 
+use App\Actions\CreateAuditLog;
 use App\Enums\TicketMessageType;
 use App\Enums\TicketPriority;
 use App\Enums\TicketStatus;
@@ -13,6 +14,8 @@ use App\Models\Ticket;
 use App\Models\TicketAttachment;
 use App\Models\TicketMessage;
 use App\Models\User;
+use App\Notifications\TicketAssignedNotification;
+use App\Notifications\TicketResolvedNotification;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
@@ -151,11 +154,57 @@ final class AgentTicketDetail extends Component
 
         abort_unless($user->can('update', $ticket), 403);
 
+        $audit = new CreateAuditLog();
+
+        $oldStatus = $ticket->status->value;
+        $newStatus = $this->status;
+        $oldPriority = $ticket->priority !== null ? $ticket->priority->value : '';
+        $newPriority = $this->priority;
+        $oldCategoryId = $ticket->category_id ?? '';
+        $newCategoryId = $this->categoryId;
+
         $ticket->update([
             'status' => $this->status,
             'priority' => $this->priority !== '' ? $this->priority : null,
             'category_id' => $this->categoryId !== '' ? $this->categoryId : null,
         ]);
+
+        if ($oldStatus !== $newStatus) {
+            $audit->execute(
+                action: 'status_changed',
+                actor: $user,
+                ticketId: $ticket->id,
+                auditable: $ticket,
+                oldValues: ['status' => $oldStatus],
+                newValues: ['status' => $newStatus],
+            );
+
+            if ($newStatus === TicketStatus::Resolved->value && $ticket->requester !== null) {
+                $ticket->requester->notify(new TicketResolvedNotification($ticket));
+            }
+        }
+
+        if ($oldPriority !== $newPriority) {
+            $audit->execute(
+                action: 'priority_changed',
+                actor: $user,
+                ticketId: $ticket->id,
+                auditable: $ticket,
+                oldValues: ['priority' => $oldPriority],
+                newValues: ['priority' => $newPriority],
+            );
+        }
+
+        if ($oldCategoryId !== $newCategoryId) {
+            $audit->execute(
+                action: 'category_changed',
+                actor: $user,
+                ticketId: $ticket->id,
+                auditable: $ticket,
+                oldValues: ['category_id' => $oldCategoryId],
+                newValues: ['category_id' => $newCategoryId],
+            );
+        }
 
         $ticket->tags()->sync($this->selectedTagIds);
     }
@@ -168,9 +217,28 @@ final class AgentTicketDetail extends Component
 
         abort_unless($user->can('assign', $ticket), 403);
 
+        $oldAssigneeId = $ticket->assigned_to_user_id ?? '';
+        $newAssigneeId = $this->assigneeId;
+
         $ticket->update([
             'assigned_to_user_id' => $this->assigneeId !== '' ? $this->assigneeId : null,
         ]);
+
+        if ($oldAssigneeId !== $newAssigneeId) {
+            new CreateAuditLog()->execute(
+                action: 'assignment_changed',
+                actor: $user,
+                ticketId: $ticket->id,
+                auditable: $ticket,
+                oldValues: ['assigned_to_user_id' => $oldAssigneeId],
+                newValues: ['assigned_to_user_id' => $newAssigneeId],
+            );
+
+            if ($newAssigneeId !== '') {
+                $assignee = User::query()->findOrFail($newAssigneeId);
+                $assignee->notify(new TicketAssignedNotification($ticket, $user));
+            }
+        }
     }
 
     public function assignToMe(): void
@@ -181,8 +249,23 @@ final class AgentTicketDetail extends Component
 
         abort_unless($user->can('assign', $ticket), 403);
 
+        $oldAssigneeId = $ticket->assigned_to_user_id ?? '';
+
         $ticket->update(['assigned_to_user_id' => $user->id]);
         $this->assigneeId = $user->id;
+
+        if ($oldAssigneeId !== $user->id) {
+            new CreateAuditLog()->execute(
+                action: 'assignment_changed',
+                actor: $user,
+                ticketId: $ticket->id,
+                auditable: $ticket,
+                oldValues: ['assigned_to_user_id' => $oldAssigneeId],
+                newValues: ['assigned_to_user_id' => $user->id],
+            );
+
+            $user->notify(new TicketAssignedNotification($ticket, $user));
+        }
     }
 
     public function submitReply(): void

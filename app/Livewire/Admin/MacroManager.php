@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Livewire\Admin;
 
+use App\Actions\CreateAuditLog;
 use App\Models\Macro;
 use App\Models\User;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -58,21 +59,37 @@ final class MacroManager extends Component
 
         $this->validate($rules);
 
+        $audit = new CreateAuditLog();
+
         if ($this->editingId !== '') {
             $macro = Macro::query()->findOrFail($this->editingId);
             abort_unless($user->can('update', $macro), 403);
+            $oldValues = ['title' => $macro->title, 'is_active' => $macro->is_active];
             $macro->update([
                 'title' => $this->title,
                 'body' => $this->body,
                 'is_active' => $this->is_active,
             ]);
+            $audit->execute(
+                action: 'macro_updated',
+                actor: $user,
+                auditable: $macro,
+                oldValues: $oldValues,
+                newValues: ['title' => $this->title, 'is_active' => $this->is_active],
+            );
         } else {
             abort_unless($user->can('create', Macro::class), 403);
-            Macro::query()->create([
+            $macro = Macro::query()->create([
                 'title' => $this->title,
                 'body' => $this->body,
                 'is_active' => $this->is_active,
             ]);
+            $audit->execute(
+                action: 'macro_created',
+                actor: $user,
+                auditable: $macro,
+                newValues: ['title' => $this->title, 'is_active' => $this->is_active],
+            );
         }
 
         $this->resetForm();
@@ -85,6 +102,12 @@ final class MacroManager extends Component
         $user = Auth::user();
         $macro = Macro::query()->findOrFail($id);
         abort_unless($user->can('delete', $macro), 403);
+        new CreateAuditLog()->execute(
+            action: 'macro_deleted',
+            actor: $user,
+            auditable: $macro,
+            oldValues: ['title' => $macro->title],
+        );
         $macro->delete();
     }
 

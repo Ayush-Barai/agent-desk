@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Livewire\Admin;
 
+use App\Actions\CreateAuditLog;
 use App\Models\Category;
 use App\Models\User;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -58,21 +59,37 @@ final class CategoryManager extends Component
 
         $this->validate($rules);
 
+        $audit = new CreateAuditLog();
+
         if ($this->editingId !== '') {
             $category = Category::query()->findOrFail($this->editingId);
             abort_unless($user->can('update', $category), 403);
+            $oldValues = ['name' => $category->name, 'is_active' => $category->is_active];
             $category->update([
                 'name' => $this->name,
                 'description' => $this->description !== '' ? $this->description : null,
                 'is_active' => $this->is_active,
             ]);
+            $audit->execute(
+                action: 'category_updated',
+                actor: $user,
+                auditable: $category,
+                oldValues: $oldValues,
+                newValues: ['name' => $this->name, 'is_active' => $this->is_active],
+            );
         } else {
             abort_unless($user->can('create', Category::class), 403);
-            Category::query()->create([
+            $category = Category::query()->create([
                 'name' => $this->name,
                 'description' => $this->description !== '' ? $this->description : null,
                 'is_active' => $this->is_active,
             ]);
+            $audit->execute(
+                action: 'category_created',
+                actor: $user,
+                auditable: $category,
+                newValues: ['name' => $this->name, 'is_active' => $this->is_active],
+            );
         }
 
         $this->resetForm();
@@ -85,6 +102,12 @@ final class CategoryManager extends Component
         $user = Auth::user();
         $category = Category::query()->findOrFail($id);
         abort_unless($user->can('delete', $category), 403);
+        new CreateAuditLog()->execute(
+            action: 'category_deleted',
+            actor: $user,
+            auditable: $category,
+            oldValues: ['name' => $category->name],
+        );
         $category->delete();
     }
 

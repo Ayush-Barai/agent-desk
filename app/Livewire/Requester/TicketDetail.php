@@ -9,6 +9,7 @@ use App\Models\Ticket;
 use App\Models\TicketAttachment;
 use App\Models\TicketMessage;
 use App\Models\User;
+use App\Notifications\RequesterRepliedNotification;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
@@ -105,6 +106,10 @@ final class TicketDetail extends Component
         }
 
         $ticket->update(['last_requester_message_at' => now()]);
+
+        if ($ticket->assignee !== null) {
+            $ticket->assignee->notify(new RequesterRepliedNotification($ticket));
+        }
 
         $this->reset('replyBody', 'replyAttachments');
     }
