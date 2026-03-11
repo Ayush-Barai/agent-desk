@@ -5,9 +5,14 @@ declare(strict_types=1);
 namespace App\Livewire\Agent;
 
 use App\Actions\CreateAuditLog;
+use App\DTOs\TriageInput;
+use App\Enums\AiRunStatus;
+use App\Enums\AiRunType;
 use App\Enums\TicketMessageType;
 use App\Enums\TicketPriority;
 use App\Enums\TicketStatus;
+use App\Jobs\RunTicketTriageJob;
+use App\Models\AiRun;
 use App\Models\Category;
 use App\Models\Tag;
 use App\Models\Ticket;
@@ -317,6 +322,103 @@ final class AgentTicketDetail extends Component
         $this->replyType = 'public';
     }
 
+    public function runAiTriage(): void
+    {
+        /** @var User $user */
+        $user = Auth::user();
+        $ticket = Ticket::query()->findOrFail($this->ticketId);
+
+        abort_unless($user->can('create', AiRun::class), 403);
+
+        $input = new TriageInput(
+            ticketId: $ticket->id,
+            subject: $ticket->subject,
+            description: $ticket->description,
+        );
+
+        $inputHash = hash('sha256', json_encode([
+            'ticket_id' => $input->ticketId,
+            'subject' => $input->subject,
+            'description' => $input->description,
+        ], JSON_THROW_ON_ERROR));
+
+        $existingRun = AiRun::query()
+            ->where('ticket_id', $ticket->id)
+            ->where('run_type', AiRunType::Triage)
+            ->where('input_hash', $inputHash)
+            ->where('status', AiRunStatus::Succeeded)
+            ->first();
+
+        if ($existingRun instanceof AiRun) {
+            $this->applyTriageResult($existingRun);
+
+            return;
+        }
+
+        $aiRun = AiRun::query()->create([
+            'ticket_id' => $ticket->id,
+            'initiated_by_user_id' => $user->id,
+            'run_type' => AiRunType::Triage,
+            'status' => AiRunStatus::Queued,
+            'input_hash' => $inputHash,
+            'input_json' => [
+                'ticket_id' => $input->ticketId,
+                'subject' => $input->subject,
+                'description' => $input->description,
+            ],
+        ]);
+
+        dispatch(new RunTicketTriageJob($aiRun->id, $input));
+    }
+
+    public function applyTriageResult(AiRun $aiRun): void
+    {
+        /** @var array{category_suggestion?: string|null, priority_suggestion?: string|null, summary?: string, tags?: list<string>, clarifying_questions?: list<string>, escalation_required?: bool}|null $output */
+        $output = $aiRun->output_json;
+
+        if ($output === null) {
+            return;
+        }
+
+        $categorySuggestion = $output['category_suggestion'] ?? null;
+        if ($categorySuggestion !== null) {
+            $category = Category::query()
+                ->where('name', $categorySuggestion)
+                ->where('is_active', true)
+                ->first();
+            if ($category instanceof Category) {
+                $this->categoryId = $category->id;
+            }
+        }
+
+        $prioritySuggestion = $output['priority_suggestion'] ?? null;
+        if ($prioritySuggestion !== null) {
+            $priority = TicketPriority::tryFrom($prioritySuggestion);
+            if ($priority !== null) {
+                $this->priority = $priority->value;
+            }
+        }
+
+        $tags = $output['tags'] ?? [];
+        if ($tags !== []) {
+            $tagIds = Tag::query()
+                ->whereIn('name', $tags)
+                ->pluck('id')
+                ->all();
+            /** @var array<int, string> $tagIds */
+            $this->selectedTagIds = $tagIds;
+        }
+    }
+
+    public function getLatestTriageRun(): ?AiRun
+    {
+        return AiRun::query()
+            ->where('ticket_id', $this->ticketId)
+            ->where('run_type', AiRunType::Triage)
+            ->latest()
+            ->first();
+    }
+
     /**
      * @return list<TicketStatus>
      */
@@ -345,6 +447,7 @@ final class AgentTicketDetail extends Component
             'agents' => $this->getAgents(),
             'statuses' => $this->getStatuses(),
             'priorities' => $this->getPriorities(),
+            'latestTriageRun' => $this->getLatestTriageRun(),
         ]);
     }
 }

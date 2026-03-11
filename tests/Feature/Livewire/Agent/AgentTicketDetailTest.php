@@ -2,10 +2,12 @@
 
 declare(strict_types=1);
 
+use App\Enums\AiRunType;
 use App\Enums\TicketMessageType;
 use App\Enums\TicketPriority;
 use App\Enums\TicketStatus;
 use App\Livewire\Agent\AgentTicketDetail;
+use App\Models\AiRun;
 use App\Models\Category;
 use App\Models\Tag;
 use App\Models\Ticket;
@@ -328,13 +330,26 @@ test('ticket detail shows ai triage placeholder', function (): void {
 
     Livewire::actingAs($agent)
         ->test(AgentTicketDetail::class, ['ticket' => $ticket])
-        ->assertSee('AI Triage Summary')
+        ->assertSee('AI Triage')
         ->assertSee('AI triage has not run yet');
 });
 
 test('ticket detail shows ai summary when available', function (): void {
     $agent = User::factory()->agent()->create();
     $ticket = Ticket::factory()->create(['summary' => 'User reports billing overcharge on last invoice.']);
+
+    AiRun::factory()->succeeded()->create([
+        'ticket_id' => $ticket->id,
+        'run_type' => AiRunType::Triage,
+        'output_json' => [
+            'summary' => 'User reports billing overcharge on last invoice.',
+            'category_suggestion' => null,
+            'priority_suggestion' => 'medium',
+            'tags' => [],
+            'clarifying_questions' => [],
+            'escalation_required' => false,
+        ],
+    ]);
 
     Livewire::actingAs($agent)
         ->test(AgentTicketDetail::class, ['ticket' => $ticket])

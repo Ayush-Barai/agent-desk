@@ -193,11 +193,80 @@
             </div>
         @endif
 
-        {{-- AI Triage Summary Placeholder --}}
+        {{-- AI Triage Panel --}}
         <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg border-l-4 border-purple-400">
             <div class="p-6">
-                <h4 class="text-md font-semibold text-gray-900 mb-2">AI Triage Summary</h4>
-                <p class="text-sm text-gray-500 italic">{{ $ticket->summary ?? 'AI triage has not run yet. Summary will appear here once available.' }}</p>
+                <div class="flex items-center justify-between mb-4">
+                    <h4 class="text-md font-semibold text-gray-900">AI Triage</h4>
+                    <button wire:click="runAiTriage" type="button"
+                        class="inline-flex items-center px-3 py-1.5 bg-purple-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-purple-700 transition ease-in-out duration-150">
+                        <span wire:loading.remove wire:target="runAiTriage">Run AI Triage</span>
+                        <span wire:loading wire:target="runAiTriage">Running...</span>
+                    </button>
+                </div>
+
+                @if($latestTriageRun)
+                    @if($latestTriageRun->status->value === 'queued' || $latestTriageRun->status->value === 'running')
+                        <div class="text-sm text-blue-600" wire:poll.2s>
+                            AI triage is {{ $latestTriageRun->status->label() }}...
+                        </div>
+                    @elseif($latestTriageRun->status->value === 'succeeded' && $latestTriageRun->output_json)
+                        <div class="space-y-3">
+                            <div>
+                                <span class="text-xs font-medium text-gray-500 uppercase">Summary</span>
+                                <p class="text-sm text-gray-700 mt-1">{{ $latestTriageRun->output_json['summary'] ?? '—' }}</p>
+                            </div>
+
+                            @if(!empty($latestTriageRun->output_json['category_suggestion']))
+                                <div>
+                                    <span class="text-xs font-medium text-gray-500 uppercase">Suggested Category</span>
+                                    <p class="text-sm text-gray-700 mt-1">{{ $latestTriageRun->output_json['category_suggestion'] }}</p>
+                                </div>
+                            @endif
+
+                            @if(!empty($latestTriageRun->output_json['priority_suggestion']))
+                                <div>
+                                    <span class="text-xs font-medium text-gray-500 uppercase">Suggested Priority</span>
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800">
+                                        {{ ucfirst($latestTriageRun->output_json['priority_suggestion']) }}
+                                    </span>
+                                </div>
+                            @endif
+
+                            @if(!empty($latestTriageRun->output_json['tags']))
+                                <div>
+                                    <span class="text-xs font-medium text-gray-500 uppercase">Suggested Tags</span>
+                                    <div class="flex flex-wrap gap-1 mt-1">
+                                        @foreach($latestTriageRun->output_json['tags'] as $tag)
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800">{{ $tag }}</span>
+                                        @endforeach
+                                    </div>
+                                </div>
+                            @endif
+
+                            @if(!empty($latestTriageRun->output_json['clarifying_questions']))
+                                <div>
+                                    <span class="text-xs font-medium text-gray-500 uppercase">Clarifying Questions</span>
+                                    <ul class="list-disc list-inside mt-1 space-y-1">
+                                        @foreach($latestTriageRun->output_json['clarifying_questions'] as $question)
+                                            <li class="text-sm text-gray-700">{{ $question }}</li>
+                                        @endforeach
+                                    </ul>
+                                </div>
+                            @endif
+
+                            @if(!empty($latestTriageRun->output_json['escalation_required']))
+                                <div class="rounded-md bg-red-50 p-3">
+                                    <p class="text-sm text-red-800 font-medium">Escalation Recommended</p>
+                                </div>
+                            @endif
+                        </div>
+                    @elseif($latestTriageRun->status->value === 'failed')
+                        <p class="text-sm text-red-600">AI triage failed: {{ $latestTriageRun->error_message ?? 'Unknown error' }}</p>
+                    @endif
+                @else
+                    <p class="text-sm text-gray-500 italic">AI triage has not run yet. Click "Run AI Triage" to analyze this ticket.</p>
+                @endif
             </div>
         </div>
 
