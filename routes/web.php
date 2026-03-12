@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Http\Controllers\AttachmentDownloadController;
 use App\Http\Controllers\ProfileController;
+use App\Models\AiRun;
 use App\Models\Ticket;
 use Illuminate\Contracts\View\Factory;
 use Illuminate\Contracts\View\View;
@@ -48,6 +49,9 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
             Route::get('/kb-articles', fn (): Factory|View => view('admin.kb-articles.index'))->name('kb-articles.index');
             Route::get('/targets', fn (): Factory|View => view('admin.targets.index'))->name('targets.index');
             Route::get('/audit-logs', fn (): Factory|View => view('admin.audit-logs.index'))->name('audit-logs.index');
+            Route::get('/ai-runs', fn (): Factory|View => view('admin.ai-runs.index'))->name('ai-runs.index');
+            Route::get('/ai-runs/{aiRun}', fn (AiRun $aiRun): Factory|View => view('admin.ai-runs.show', ['aiRun' => $aiRun]))->name('ai-runs.show');
+            Route::get('/agent-reports', fn (): Factory|View => view('admin.agent-reports.index'))->name('agent-reports.index');
         });
 });
 
