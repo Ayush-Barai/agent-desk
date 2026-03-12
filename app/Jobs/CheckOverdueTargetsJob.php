@@ -37,6 +37,7 @@ final class CheckOverdueTargetsJob implements ShouldQueue
             ->whereNull('first_responded_at')
             ->whereNull('overdue_response_notified_at')
             ->whereNot('status', TicketStatus::Resolved)
+            ->with(['assignee'])
             ->get();
 
         foreach ($tickets as $ticket) {
@@ -52,6 +53,7 @@ final class CheckOverdueTargetsJob implements ShouldQueue
             ->whereNull('resolved_at')
             ->whereNull('overdue_resolution_notified_at')
             ->whereNot('status', TicketStatus::Resolved)
+            ->with(['assignee'])
             ->get();
 
         foreach ($tickets as $ticket) {
@@ -86,12 +88,10 @@ final class CheckOverdueTargetsJob implements ShouldQueue
      */
     private function getNotifiableUsers(Ticket $ticket): Collection
     {
-        if ($ticket->assigned_to_user_id !== null) {
-            $assignee = User::query()->find($ticket->assigned_to_user_id);
+        $assignee = $ticket->assignee;
 
-            if ($assignee instanceof User) {
-                return new Collection([$assignee]);
-            }
+        if ($assignee instanceof User) {
+            return new Collection([$assignee]);
         }
 
         return User::query()

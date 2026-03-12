@@ -7,14 +7,14 @@ namespace App\Livewire\Admin;
 use App\Enums\TicketMessageType;
 use App\Enums\TicketStatus;
 use App\Enums\UserRole;
-use App\Models\AiRun;
-use App\Models\AuditLog;
 use App\Models\Ticket;
 use App\Models\TicketMessage;
 use App\Models\User;
 use Illuminate\Contracts\View\View;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Livewire\Component;
 
 final class AgentWorkReport extends Component
@@ -33,34 +33,56 @@ final class AgentWorkReport extends Component
     {
         $agents = User::query()
             ->whereIn('role', [UserRole::Agent->value, UserRole::Admin->value])
+            ->withCount([
+                'assignedTickets as tickets_assigned',
+                'ticketMessages as replies_sent' => function (mixed $q): void {
+                    /** @var Builder<TicketMessage> $q */
+                    $q->where('type', TicketMessageType::Public);
+                },
+                'ticketMessages as internal_notes' => function (mixed $q): void {
+                    /** @var Builder<TicketMessage> $q */
+                    $q->where('type', TicketMessageType::Internal);
+                },
+                'assignedTickets as resolved_tickets' => function (mixed $q): void {
+                    /** @var Builder<Ticket> $q */
+                    $q->where('status', TicketStatus::Resolved);
+                },
+                'aiRuns as ai_runs_initiated',
+            ])
             ->orderBy('name')
             ->get();
 
-        return $agents->map(fn (User $agent): array => [
-            'agent' => $agent,
-            'tickets_assigned' => Ticket::query()
-                ->where('assigned_to_user_id', $agent->id)
-                ->count(),
-            'replies_sent' => TicketMessage::query()
-                ->where('user_id', $agent->id)
-                ->where('type', TicketMessageType::Public)
-                ->count(),
-            'internal_notes' => TicketMessage::query()
-                ->where('user_id', $agent->id)
-                ->where('type', TicketMessageType::Internal)
-                ->count(),
-            'status_changes' => AuditLog::query()
-                ->where('actor_user_id', $agent->id)
-                ->where('action', 'status_changed')
-                ->count(),
-            'resolved_tickets' => Ticket::query()
-                ->where('assigned_to_user_id', $agent->id)
-                ->where('status', TicketStatus::Resolved)
-                ->count(),
-            'ai_runs_initiated' => AiRun::query()
-                ->where('initiated_by_user_id', $agent->id)
-                ->count(),
-        ]);
+        /** @var array<string, int> $statusChangeCounts */
+        $statusChangeCounts = DB::table('audit_logs')
+            ->select('actor_user_id', DB::raw('count(*) as cnt'))
+            ->where('action', 'status_changed')
+            ->whereIn('actor_user_id', $agents->pluck('id'))
+            ->groupBy('actor_user_id')
+            ->pluck('cnt', 'actor_user_id')
+            ->all();
+
+        return $agents->map(function (User $agent) use ($statusChangeCounts): array {
+            /** @var int $ticketsAssigned */
+            $ticketsAssigned = $agent->getAttribute('tickets_assigned');
+            /** @var int $repliesSent */
+            $repliesSent = $agent->getAttribute('replies_sent');
+            /** @var int $internalNotes */
+            $internalNotes = $agent->getAttribute('internal_notes');
+            /** @var int $resolvedTickets */
+            $resolvedTickets = $agent->getAttribute('resolved_tickets');
+            /** @var int $aiRunsInitiated */
+            $aiRunsInitiated = $agent->getAttribute('ai_runs_initiated');
+
+            return [
+                'agent' => $agent,
+                'tickets_assigned' => $ticketsAssigned,
+                'replies_sent' => $repliesSent,
+                'internal_notes' => $internalNotes,
+                'status_changes' => $statusChangeCounts[$agent->id] ?? 0,
+                'resolved_tickets' => $resolvedTickets,
+                'ai_runs_initiated' => $aiRunsInitiated,
+            ];
+        });
     }
 
     public function render(): View
