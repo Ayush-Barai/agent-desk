@@ -106,7 +106,9 @@ final class TicketCreateForm extends Component
                 ],
             ]);
 
-            return $this->redirect(route('requester.tickets.show', $ticket), navigate: true);
+            to_route('requester.tickets.show', $ticket);
+
+            return $this;
         });
     }
 

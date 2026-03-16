@@ -67,7 +67,7 @@
                     </div>
 
                     <div>
-                        <textarea wire:model="replyBody" rows="4"
+                        <textarea wire:text.poll.500ms="replyBody" rows="4"
                             class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                             placeholder="{{ $replyType === 'internal' ? 'Add an internal note...' : 'Type your reply...' }}"></textarea>
                         @error('replyBody') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror

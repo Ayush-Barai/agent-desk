@@ -61,7 +61,7 @@ AI agents are never called directly from UI rendering logic.
 
 ```bash
 # Clone the repository
-git clone <repository-url> agent-desk
+git clone https://github.com/Ayush-Barai/agent-desk.git
 cd agent-desk
 
 # Install dependencies, generate key, run migrations, build frontend
@@ -112,12 +112,19 @@ GROQ_MODEL=llama-3.3-70b-versatile
 
 This is configured in `config/ai.php` under the Groq provider. You can switch to any Groq-supported model by changing this value.
 
+
+### Key Generation
+
+```bash
+php artisan key:generate 
+```
+
 ## Database setup
 
 ### Migrations
 
 ```bash
-php artisan migrate
+php artisan migrate 
 ```
 
 ### Seeders
@@ -148,8 +155,7 @@ composer dev
 This starts concurrently:
 - Laravel server (`php artisan serve`)
 - Queue worker (`php artisan queue:listen --tries=1`)
-- Log viewer (`php artisan pail`)
-- Vite dev server (`bun run dev`)
+- Vite dev server (`npm run dev`)
 
 ### Queue worker
 

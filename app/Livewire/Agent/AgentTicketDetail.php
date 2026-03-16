@@ -146,8 +146,7 @@ final class AgentTicketDetail extends Component
     {
         return User::query()
             ->where(function (Builder $q): void {
-                $q->where('role', 'agent')
-                    ->orWhere('role', 'admin');
+                $q->where('role', 'agent');
             })
             ->orderBy('name')
             ->get();

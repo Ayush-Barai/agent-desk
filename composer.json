@@ -80,8 +80,7 @@
         ],
         "lint": [
             "rector",
-            "pint --parallel",
-            "bun run lint"
+            "pint --parallel"
         ],
         "test:type-coverage": "pest --type-coverage --min=100",
         "test:lint": [
@@ -89,7 +88,7 @@
             "rector --dry-run",
             "bun run test:lint"
         ],
-        "test:unit": "XDEBUG_MODE=\"coverage\" pest --parallel --coverage --exactly=100.0",
+        "test:unit": "set XDEBUG_MODE=coverage&&pest --parallel --coverage --exactly=100.0",
         "test:types": "phpstan",
         "test": [
             "@test:type-coverage",

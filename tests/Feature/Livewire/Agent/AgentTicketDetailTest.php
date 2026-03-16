@@ -404,13 +404,11 @@ test('submit reply resets form fields', function (): void {
 
 test('agent detail shows agents in assignment dropdown', function (): void {
     $agent = User::factory()->agent()->create(['name' => 'Agent Smith']);
-    $admin = User::factory()->admin()->create(['name' => 'Admin Jones']);
     $ticket = Ticket::factory()->create();
 
     Livewire::actingAs($agent)
         ->test(AgentTicketDetail::class, ['ticket' => $ticket])
-        ->assertSee('Agent Smith')
-        ->assertSee('Admin Jones');
+        ->assertSee('Agent Smith');
 });
 
 test('empty thread shows no messages placeholder', function (): void {
