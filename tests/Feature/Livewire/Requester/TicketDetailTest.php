@@ -150,3 +150,17 @@ test('ticket detail hides ai draft messages', function (): void {
         ->test(TicketDetail::class, ['ticket' => $ticket])
         ->assertDontSee('AI draft that should be hidden');
 });
+
+test('requester can remove a selected reply attachment', function (): void {
+    Storage::fake('local');
+    $requester = User::factory()->requester()->create();
+    $ticket = Ticket::factory()->create(['requester_id' => $requester->id]);
+    $file = UploadedFile::fake()->create('reply.pdf', 128, 'application/pdf');
+
+    Livewire::actingAs($requester)
+        ->test(TicketDetail::class, ['ticket' => $ticket])
+        ->set('replyAttachments', [$file])
+        ->assertCount('replyAttachments', 1)
+        ->call('removeReplyAttachment', 0)
+        ->assertCount('replyAttachments', 0);
+});

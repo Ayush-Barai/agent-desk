@@ -420,3 +420,17 @@ test('empty thread shows no messages placeholder', function (): void {
         ->assertSee('No public messages yet.')
         ->assertSee('No internal notes.');
 });
+
+test('agent can remove a selected reply attachment', function (): void {
+    Storage::fake('local');
+    $agent = User::factory()->agent()->create();
+    $ticket = Ticket::factory()->create();
+    $file = UploadedFile::fake()->create('report.pdf', 128, 'application/pdf');
+
+    Livewire::actingAs($agent)
+        ->test(AgentTicketDetail::class, ['ticket' => $ticket])
+        ->set('replyAttachments', [$file])
+        ->assertCount('replyAttachments', 1)
+        ->call('removeReplyAttachment', 0)
+        ->assertCount('replyAttachments', 0);
+});

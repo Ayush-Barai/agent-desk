@@ -21,3 +21,5 @@ Homestead.yaml
 /.vscode
 /.zed
 /tmp
+coverage-output.txt
+test_output.txt

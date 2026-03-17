@@ -128,3 +128,17 @@ test('create form shows active categories', function (): void {
         ->assertSee('Active Category')
         ->assertDontSee('Inactive Category');
 });
+
+test('requester can remove an attachment before submitting', function (): void {
+    Storage::fake('local');
+    $requester = User::factory()->requester()->create();
+    $file1 = UploadedFile::fake()->create('doc1.pdf', 100, 'application/pdf');
+    $file2 = UploadedFile::fake()->create('doc2.pdf', 100, 'application/pdf');
+
+    Livewire::actingAs($requester)
+        ->test(TicketCreateForm::class)
+        ->set('attachments', [$file1, $file2])
+        ->assertCount('attachments', 2)
+        ->call('removeAttachment', 0)
+        ->assertCount('attachments', 1);
+});

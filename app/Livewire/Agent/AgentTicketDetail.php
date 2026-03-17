@@ -505,8 +505,7 @@ final class AgentTicketDetail extends Component
         }
 
         $draftReply = $output['draft_reply'] ?? '';
-
-        if ($draftReply !== '') {
+        if (is_string($draftReply) && $draftReply !== '') {
             $this->replyBody = $draftReply;
             $this->resetErrorBag('replyBody');
         }

@@ -9,14 +9,6 @@ use App\Notifications\RequesterRepliedNotification;
 use App\Notifications\TicketAssignedNotification;
 use Livewire\Livewire;
 
-test('notification bell shows zero unread count when no notifications', function (): void {
-    $agent = User::factory()->agent()->create();
-
-    Livewire::actingAs($agent)
-        ->test(NotificationBell::class)
-        ->assertSet('unreadCount', 0);
-})->skip('unreadCount is a computed method, not a property');
-
 test('notification bell renders unread count', function (): void {
     $agent = User::factory()->agent()->create();
     $admin = User::factory()->admin()->create();
