@@ -71,6 +71,8 @@
                     {{ auth()->user()->role->label() }}
                 </span>
 
+                <livewire:notification-bell />
+
                 <x-dropdown align="right" width="48">
                     <x-slot name="trigger">
                         <button class="flex items-center gap-2 px-2 py-1.5 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-1 transition duration-150">
@@ -153,6 +155,11 @@
                     Audit Logs
                 </a>
             @endif
+        </div>
+
+        <!-- Responsive Notifications -->
+        <div class="px-4 py-2 border-t border-gray-100">
+            <livewire:notification-bell />
         </div>
 
         <!-- Responsive User Info -->
