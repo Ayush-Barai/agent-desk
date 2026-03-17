@@ -36,9 +36,20 @@
             @error('attachments.*') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
 
             @if(count($attachments) > 0)
-                <ul class="mt-2 space-y-1">
+                <ul class="mt-3 space-y-2">
                     @foreach($attachments as $index => $attachment)
-                        <li class="text-sm text-gray-600">{{ $attachment->getClientOriginalName() }}</li>
+                        <li class="flex items-center justify-between rounded-md border border-gray-200 px-3 py-2 bg-gray-50">
+                            <span class="text-sm font-medium text-gray-700 truncate mr-4" title="{{ $attachment->getClientOriginalName() }}">
+                                {{ Str::limit($attachment->getClientOriginalName(), 40) }}
+                            </span>
+                            <button type="button" wire:click="removeAttachment({{ $index }})" 
+                                class="shrink-0 text-red-500 hover:text-red-700 transition" 
+                                aria-label="Remove {{ $attachment->getClientOriginalName() }}">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+                        </li>
                     @endforeach
                 </ul>
             @endif

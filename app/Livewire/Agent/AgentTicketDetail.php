@@ -325,8 +325,15 @@ final class AgentTicketDetail extends Component
             $ticket->update($updateData);
         }
 
-        $this->reset('replyBody', 'replyAttachments');
-        $this->replyType = 'public';
+        $this->reset('replyBody', 'replyAttachments', 'replyType');
+    }
+
+    public function removeReplyAttachment(int $index): void
+    {
+        if (isset($this->replyAttachments[$index])) {
+            unset($this->replyAttachments[$index]);
+            $this->replyAttachments = array_values($this->replyAttachments);
+        }
     }
 
     public function runAiTriage(): void
@@ -491,8 +498,6 @@ final class AgentTicketDetail extends Component
     public function applyDraftReply(string $aiRunId): void
     {
         $aiRun = AiRun::query()->findOrFail($aiRunId);
-
-        /** @var array{draft_reply?: string}|null $output */
         $output = $aiRun->output_json;
 
         if ($output === null) {
@@ -503,6 +508,7 @@ final class AgentTicketDetail extends Component
 
         if ($draftReply !== '') {
             $this->replyBody = $draftReply;
+            $this->resetErrorBag('replyBody');
         }
     }
 

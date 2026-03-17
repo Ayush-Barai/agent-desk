@@ -114,6 +114,14 @@ final class TicketDetail extends Component
         $this->reset('replyBody', 'replyAttachments');
     }
 
+    public function removeReplyAttachment(int $index): void
+    {
+        if (isset($this->replyAttachments[$index])) {
+            unset($this->replyAttachments[$index]);
+            $this->replyAttachments = array_values($this->replyAttachments);
+        }
+    }
+
     public function render(): View
     {
         return view('livewire.requester.ticket-detail', [

@@ -112,6 +112,14 @@ final class TicketCreateForm extends Component
         });
     }
 
+    public function removeAttachment(int $index): void
+    {
+        if (isset($this->attachments[$index])) {
+            unset($this->attachments[$index]);
+            $this->attachments = array_values($this->attachments);
+        }
+    }
+
     public function render(): View
     {
         return view('livewire.requester.ticket-create-form', [

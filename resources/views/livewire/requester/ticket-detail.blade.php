@@ -78,8 +78,15 @@
                     @foreach($attachments as $attachment)
                         <li wire:key="att-{{ $attachment->id }}" class="flex items-center justify-between rounded-md border border-gray-200 px-4 py-2">
                             <div>
-                                <span class="text-sm font-medium text-gray-900">{{ $attachment->original_name }}</span>
-                                <span class="ml-2 text-xs text-gray-500">{{ number_format($attachment->size_bytes / 1024, 1) }} KB</span>
+                                <a href="{{ route('attachments.download', $attachment) }}" 
+                                    class="text-sm font-medium text-indigo-600 hover:text-indigo-900 hover:underline flex items-center gap-1"
+                                    title="Download {{ $attachment->original_name }}">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                    </svg>
+                                    {{ $attachment->original_name }}
+                                </a>
+                                <span class="ml-5 text-xs text-gray-500">{{ number_format($attachment->size_bytes / 1024, 1) }} KB</span>
                             </div>
                             <span class="text-xs text-gray-500">{{ $attachment->uploader?->name ?? 'Unknown' }}</span>
                         </li>
@@ -107,6 +114,25 @@
                         class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100">
                     <div wire:loading wire:target="replyAttachments" class="mt-1 text-sm text-gray-500">Uploading...</div>
                     @error('replyAttachments.*') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
+
+                    @if(count($replyAttachments) > 0)
+                        <ul class="mt-3 space-y-2">
+                            @foreach($replyAttachments as $index => $attachment)
+                                <li class="flex items-center justify-between rounded-md border border-gray-200 px-3 py-2 bg-gray-50">
+                                    <span class="text-sm font-medium text-gray-700 truncate mr-4" title="{{ $attachment->getClientOriginalName() }}">
+                                        {{ Str::limit($attachment->getClientOriginalName(), 40) }}
+                                    </span>
+                                    <button type="button" wire:click="removeReplyAttachment({{ $index }})" 
+                                        class="shrink-0 text-red-500 hover:text-red-700 transition" 
+                                        aria-label="Remove {{ $attachment->getClientOriginalName() }}">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                        </svg>
+                                    </button>
+                                </li>
+                            @endforeach
+                        </ul>
+                    @endif
                 </div>
 
                 <button type="submit"
