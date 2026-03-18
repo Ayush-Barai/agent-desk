@@ -9,6 +9,7 @@ use App\Enums\TicketStatus;
 use App\Livewire\Agent\AgentTicketDetail;
 use App\Models\AiRun;
 use App\Models\Category;
+use App\Models\Macro;
 use App\Models\Tag;
 use App\Models\Ticket;
 use App\Models\TicketAttachment;
@@ -433,4 +434,84 @@ test('agent can remove a selected reply attachment', function (): void {
         ->assertCount('replyAttachments', 1)
         ->call('removeReplyAttachment', 0)
         ->assertCount('replyAttachments', 0);
+});
+
+test('agent can insert macro into empty reply textarea', function (): void {
+    $agent = User::factory()->agent()->create();
+    $ticket = Ticket::factory()->create();
+    $macro = Macro::factory()->create([
+        'title' => 'Thank You',
+        'body' => 'Thank you for contacting us. We appreciate your business.',
+        'is_active' => true,
+    ]);
+
+    Livewire::actingAs($agent)
+        ->test(AgentTicketDetail::class, ['ticket' => $ticket])
+        ->assertSet('replyBody', '')
+        ->set('selectedMacroId', $macro->id)
+        ->call('insertMacro')
+        ->assertSet('replyBody', 'Thank you for contacting us. We appreciate your business.')
+        ->assertSet('selectedMacroId', '');
+});
+
+test('agent can insert macro into textarea with existing text', function (): void {
+    $agent = User::factory()->agent()->create();
+    $ticket = Ticket::factory()->create();
+    $macro = Macro::factory()->create([
+        'title' => 'Signature',
+        'body' => "Best regards,\nSupport Team",
+        'is_active' => true,
+    ]);
+
+    $expectedBody = "Hello, I wanted to help with your issue.\n\nBest regards,\nSupport Team";
+
+    Livewire::actingAs($agent)
+        ->test(AgentTicketDetail::class, ['ticket' => $ticket])
+        ->set('replyBody', 'Hello, I wanted to help with your issue.')
+        ->set('selectedMacroId', $macro->id)
+        ->call('insertMacro')
+        ->assertSet('replyBody', $expectedBody)
+        ->assertSet('selectedMacroId', '');
+});
+
+test('agent macro selector not shown for internal notes', function (): void {
+    $agent = User::factory()->agent()->create();
+    $ticket = Ticket::factory()->create();
+    Macro::factory()->create(['is_active' => true]);
+
+    Livewire::actingAs($agent)
+        ->test(AgentTicketDetail::class, ['ticket' => $ticket])
+        ->set('replyType', 'internal')
+        ->assertDontSee('Insert Macro');
+});
+
+test('agent sees macro selector only when macros exist', function (): void {
+    $agent = User::factory()->agent()->create();
+    $ticket = Ticket::factory()->create();
+
+    Livewire::actingAs($agent)
+        ->test(AgentTicketDetail::class, ['ticket' => $ticket])
+        ->set('replyType', 'public')
+        ->assertDontSee('Insert Macro');
+
+    Macro::factory()->create(['is_active' => true]);
+
+    Livewire::actingAs($agent)
+        ->test(AgentTicketDetail::class, ['ticket' => $ticket])
+        ->set('replyType', 'public')
+        ->assertSee('Insert Macro');
+});
+
+test('insert macro does nothing when no macro selected', function (): void {
+    $agent = User::factory()->agent()->create();
+    $ticket = Ticket::factory()->create();
+    $macro = Macro::factory()->create(['is_active' => true]);
+
+    Livewire::actingAs($agent)
+        ->test(AgentTicketDetail::class, ['ticket' => $ticket])
+        ->set('replyBody', 'Existing text')
+        ->assertSet('selectedMacroId', '')
+        ->call('insertMacro')
+        ->assertSet('replyBody', 'Existing text')
+        ->assertSet('selectedMacroId', '');
 });

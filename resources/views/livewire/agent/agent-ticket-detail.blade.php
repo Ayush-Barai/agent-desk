@@ -68,7 +68,7 @@
 
                     <div>
                         <textarea 
-                            wire:model.live.debounce.500ms="replyBody" 
+                            wire:model.poll.500ms="replyBody" 
                             wire:key="ticket-reply-textarea-{{ $ticketId }}"
                             rows="4"
                             class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
@@ -76,6 +76,29 @@
                         </textarea>
                         @error('replyBody') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
                     </div>
+
+                    {{-- Macro Insertion - Only for agents/admins composing public replies --}}
+                    @if($replyType === 'public' && count($macros) > 0)
+                        <div class="flex gap-2 items-end">
+                            <div class="flex-1">
+                                <label class="block text-xs font-medium text-gray-700 uppercase mb-1">Insert Macro</label>
+                                <select 
+                                    wire:model="selectedMacroId"
+                                    class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                                    <option value="">— Select a macro —</option>
+                                    @foreach($macros as $macro)
+                                        <option value="{{ $macro->id }}">{{ $macro->title }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <button 
+                                type="button"
+                                wire:click="insertMacro"
+                                class="inline-flex items-center px-3 py-2 bg-gray-600 hover:bg-gray-700 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest transition ease-in-out duration-150">
+                                Insert
+                            </button>
+                        </div>
+                    @endif
 
                     <div>
                         <input type="file" wire:model="replyAttachments" multiple

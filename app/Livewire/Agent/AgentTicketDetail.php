@@ -16,6 +16,7 @@ use App\Jobs\DraftTicketReplyJob;
 use App\Jobs\RunTicketTriageJob;
 use App\Models\AiRun;
 use App\Models\Category;
+use App\Models\Macro;
 use App\Models\Tag;
 use App\Models\Ticket;
 use App\Models\TicketAttachment;
@@ -55,6 +56,8 @@ final class AgentTicketDetail extends Component
     public string $replyBody = '';
 
     public string $replyType = 'public';
+
+    public string $selectedMacroId = '';
 
     /** @var array<int, TemporaryUploadedFile> */
     #[Validate(['replyAttachments.*' => 'file|max:10240|mimes:pdf,jpg,jpeg,png,gif,txt,doc,docx,csv,zip'])]
@@ -507,6 +510,7 @@ final class AgentTicketDetail extends Component
         $draftReply = $output['draft_reply'] ?? '';
         if (is_string($draftReply) && $draftReply !== '') {
             $this->replyBody = $draftReply;
+            $this->dispatch('draft-applied');
             $this->resetErrorBag('replyBody');
         }
     }
@@ -536,6 +540,34 @@ final class AgentTicketDetail extends Component
         return TicketPriority::cases();
     }
 
+    /**
+     * @return Collection<int, Macro>
+     */
+    public function getMacros(): Collection
+    {
+        return Macro::query()
+            ->where('is_active', true)
+            ->orderBy('title')
+            ->get();
+    }
+
+    public function insertMacro(): void
+    {
+        if ($this->selectedMacroId === '') {
+            return;
+        }
+
+        $macro = Macro::query()->findOrFail($this->selectedMacroId);
+
+        if ($this->replyBody === '') {
+            $this->replyBody = $macro->body;
+        } else {
+            $this->replyBody .= "\n\n".$macro->body;
+        }
+
+        $this->selectedMacroId = '';
+    }
+
     public function render(): View
     {
         return view('livewire.agent.agent-ticket-detail', [
@@ -548,6 +580,7 @@ final class AgentTicketDetail extends Component
             'agents' => $this->getAgents(),
             'statuses' => $this->getStatuses(),
             'priorities' => $this->getPriorities(),
+            'macros' => $this->getMacros(),
             'latestTriageRun' => $this->getLatestTriageRun(),
             'latestReplyDraftRun' => $this->getLatestReplyDraftRun(),
         ]);
