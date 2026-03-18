@@ -24,6 +24,7 @@ use App\Models\TicketMessage;
 use App\Models\User;
 use App\Notifications\TicketAssignedNotification;
 use App\Notifications\TicketResolvedNotification;
+use App\Services\AiRateLimiter;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
@@ -62,6 +63,19 @@ final class AgentTicketDetail extends Component
     /** @var array<int, TemporaryUploadedFile> */
     #[Validate(['replyAttachments.*' => 'file|max:10240|mimes:pdf,jpg,jpeg,png,gif,txt,doc,docx,csv,zip'])]
     public array $replyAttachments = [];
+
+    // Rate limiting and error handling properties
+    public bool $isRateLimited = false;
+
+    public ?string $rateLimitError = null;
+
+    public int $rateLimitRetryAfter = 0;
+
+    public string $rateLimitType = ''; // 'triage' or 'reply'
+
+    public int $remainingAiAttempts = 0;
+
+    private ?AiRateLimiter $aiRateLimiter = null;
 
     public function mount(Ticket $ticket): void
     {
@@ -347,6 +361,24 @@ final class AgentTicketDetail extends Component
 
         abort_unless($user->can('create', AiRun::class), 403);
 
+        // Check rate limits
+        if (! $this->getRateLimiter()->canRunTriage($user, $ticket)) {
+            $this->isRateLimited = true;
+            $this->rateLimitType = 'triage';
+            $this->rateLimitRetryAfter = max(
+                $this->getRateLimiter()->getRetryAfterPerTicket($user, $ticket),
+                $this->getRateLimiter()->getRetryAfterGlobal($user),
+            );
+            $this->remainingAiAttempts = min(
+                $this->getRateLimiter()->getRemainingPerTicket($user, $ticket),
+                $this->getRateLimiter()->getRemainingGlobal($user),
+            );
+            $this->rateLimitError = sprintf("You've reached the rate limit on AI runs. Try again in %d seconds.", $this->rateLimitRetryAfter);
+            $this->dispatch('rate-limit-hit');
+
+            return;
+        }
+
         $input = new TriageInput(
             ticketId: $ticket->id,
             subject: $ticket->subject,
@@ -359,6 +391,21 @@ final class AgentTicketDetail extends Component
             'description' => $input->description,
         ], JSON_THROW_ON_ERROR));
 
+        // Check for in-flight duplicate request
+        $inFlightRun = AiRun::query()
+            ->where('ticket_id', $ticket->id)
+            ->where('run_type', AiRunType::Triage)
+            ->where('input_hash', $inputHash)
+            ->whereIn('status', [AiRunStatus::Queued, AiRunStatus::Running])
+            ->first();
+
+        if ($inFlightRun instanceof AiRun) {
+            $this->dispatch('info', message: 'This triage request is already running. Refresh in a moment to see results.');
+
+            return;
+        }
+
+        // Check for existing successful run with same input
         $existingRun = AiRun::query()
             ->where('ticket_id', $ticket->id)
             ->where('run_type', AiRunType::Triage)
@@ -384,6 +431,9 @@ final class AgentTicketDetail extends Component
                 'description' => $input->description,
             ],
         ]);
+
+        // Record the attempt after successfully creating the AI run
+        $this->getRateLimiter()->recordAttempt($user, $ticket);
 
         dispatch(new RunTicketTriageJob($aiRun->id, $input));
     }
@@ -446,6 +496,24 @@ final class AgentTicketDetail extends Component
 
         abort_unless($user->can('create', AiRun::class), 403);
 
+        // Check rate limits
+        if (! $this->getRateLimiter()->canGenerateReply($user, $ticket)) {
+            $this->isRateLimited = true;
+            $this->rateLimitType = 'reply';
+            $this->rateLimitRetryAfter = max(
+                $this->getRateLimiter()->getRetryAfterPerTicket($user, $ticket),
+                $this->getRateLimiter()->getRetryAfterGlobal($user),
+            );
+            $this->remainingAiAttempts = min(
+                $this->getRateLimiter()->getRemainingPerTicket($user, $ticket),
+                $this->getRateLimiter()->getRemainingGlobal($user),
+            );
+            $this->rateLimitError = sprintf("You've reached the rate limit on AI runs. Try again in %d seconds.", $this->rateLimitRetryAfter);
+            $this->dispatch('rate-limit-hit');
+
+            return;
+        }
+
         /** @var list<array{role: string, body: string}> $messageHistory */
         $messageHistory = TicketMessage::query()
             ->where('ticket_id', $ticket->id)
@@ -479,6 +547,20 @@ final class AgentTicketDetail extends Component
             'seed_text' => $seedText,
         ], JSON_THROW_ON_ERROR));
 
+        // Check for in-flight duplicate request
+        $inFlightRun = AiRun::query()
+            ->where('ticket_id', $ticket->id)
+            ->where('run_type', AiRunType::ReplyDraft)
+            ->where('input_hash', $inputHash)
+            ->whereIn('status', [AiRunStatus::Queued, AiRunStatus::Running])
+            ->first();
+
+        if ($inFlightRun instanceof AiRun) {
+            $this->dispatch('info', message: 'This reply draft request is already running. Refresh in a moment to see results.');
+
+            return;
+        }
+
         $aiRun = AiRun::query()->create([
             'ticket_id' => $ticket->id,
             'initiated_by_user_id' => $user->id,
@@ -494,6 +576,9 @@ final class AgentTicketDetail extends Component
                 'seed_text' => $seedText,
             ],
         ]);
+
+        // Record the attempt after successfully creating the AI run
+        $this->getRateLimiter()->recordAttempt($user, $ticket);
 
         dispatch(new DraftTicketReplyJob($aiRun->id, $input, $seedText));
     }
@@ -559,13 +644,25 @@ final class AgentTicketDetail extends Component
 
         $macro = Macro::query()->findOrFail($this->selectedMacroId);
 
-        if ($this->replyBody === '') {
-            $this->replyBody = $macro->body;
-        } else {
-            $this->replyBody .= "\n\n".$macro->body;
+        if ($this->replyBody !== '') {
+            $this->replyBody .= "\n\n";
         }
 
+        $this->replyBody .= $macro->body;
+
         $this->selectedMacroId = '';
+    }
+
+    /**
+     * Clear rate limit error when user retries.
+     */
+    public function clearRateLimitError(): void
+    {
+        $this->isRateLimited = false;
+        $this->rateLimitError = null;
+        $this->rateLimitRetryAfter = 0;
+        $this->rateLimitType = '';
+        $this->remainingAiAttempts = 0;
     }
 
     public function render(): View
@@ -583,6 +680,16 @@ final class AgentTicketDetail extends Component
             'macros' => $this->getMacros(),
             'latestTriageRun' => $this->getLatestTriageRun(),
             'latestReplyDraftRun' => $this->getLatestReplyDraftRun(),
+            'isRateLimited' => $this->isRateLimited,
+            'rateLimitError' => $this->rateLimitError,
+            'rateLimitRetryAfter' => $this->rateLimitRetryAfter,
+            'rateLimitType' => $this->rateLimitType,
+            'remainingAiAttempts' => $this->remainingAiAttempts,
         ]);
+    }
+
+    private function getRateLimiter(): AiRateLimiter
+    {
+        return $this->aiRateLimiter ??= new AiRateLimiter();
     }
 }

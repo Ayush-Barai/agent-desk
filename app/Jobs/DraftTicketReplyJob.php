@@ -15,6 +15,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Log;
 use Throwable;
 
 final class DraftTicketReplyJob implements ShouldQueue
@@ -62,7 +63,7 @@ final class DraftTicketReplyJob implements ShouldQueue
         ]);
 
         try {
-            $agent = new ReplyDraftAgent();
+            $agent = resolve(ReplyDraftAgent::class);
 
             $prompt = $this->buildPrompt();
 
@@ -117,12 +118,24 @@ final class DraftTicketReplyJob implements ShouldQueue
                 'completed_at' => now(),
             ]);
         } catch (Throwable $throwable) {
+            $errorMessage = $throwable->getMessage();
+            $isRateLimitError = str_contains(mb_strtolower($errorMessage), 'rate limit');
+
             $aiRun->update([
                 'status' => AiRunStatus::Failed,
                 'progress_state' => null,
-                'error_message' => $throwable->getMessage(),
+                'error_message' => ($isRateLimitError ? 'RATE_LIMIT: ' : '').$errorMessage,
                 'completed_at' => now(),
             ]);
+
+            // Log the error for monitoring
+            if ($isRateLimitError) {
+                Log::warning('Groq rate limit hit', [
+                    'ai_run_id' => $aiRun->id,
+                    'ticket_id' => $aiRun->ticket_id,
+                    'error' => $errorMessage,
+                ]);
+            }
         }
     }
 

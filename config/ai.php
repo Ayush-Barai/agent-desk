@@ -128,4 +128,22 @@ return [
         ],
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Rate Limiting for Free Tier
+    |--------------------------------------------------------------------------
+    |
+    | Configure rate limits to protect against Groq free tier quotas.
+    | These limits prevent users from exhausting API quotas quickly.
+    | Adjust based on your Groq account tier and usage patterns.
+    |
+    */
+
+    'rate_limits' => [
+        'window_seconds' => (int) env('AI_RATE_LIMIT_WINDOW_SECONDS', 3600), // 1 hour
+        'triage_per_ticket_hour' => (int) env('AI_TRIAGE_PER_TICKET_HOUR', 5),
+        'reply_per_ticket_hour' => (int) env('AI_REPLY_PER_TICKET_HOUR', 5),
+        'global_per_user_hour' => (int) env('AI_GLOBAL_PER_USER_HOUR', 20),
+    ],
+
 ];

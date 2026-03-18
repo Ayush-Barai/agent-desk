@@ -1,4 +1,28 @@
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    {{-- Rate Limit Alert --}}
+    @if($isRateLimited)
+        <div class="lg:col-span-3 bg-red-50 border border-red-200 rounded-lg p-4">
+            <div class="flex items-start gap-3">
+                <svg class="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                </svg>
+                <div class="flex-1">
+                    <h3 class="text-sm font-medium text-red-800">{{ $rateLimitError }}</h3>
+                    @if($remainingAiAttempts > 0)
+                        <p class="text-xs text-red-700 mt-1">You have {{ $remainingAiAttempts }} AI run(s) remaining this hour.</p>
+                    @endif
+                </div>
+                <button 
+                    wire:click="clearRateLimitError"
+                    class="text-red-600 hover:text-red-800 focus:outline-none">
+                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+    @endif
+
     {{-- Left Column: Thread & Reply --}}
     <div class="lg:col-span-2 space-y-6">
 
@@ -68,7 +92,7 @@
 
                     <div>
                         <textarea 
-                            wire:model.poll.500ms="replyBody" 
+                            wire:model.live="replyBody" 
                             wire:key="ticket-reply-textarea-{{ $ticketId }}"
                             rows="4"
                             class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
@@ -244,8 +268,8 @@
             <div class="p-6">
                 <div class="flex items-center justify-between mb-4">
                     <h4 class="text-md font-semibold text-gray-900">AI Triage</h4>
-                    <button wire:click="runAiTriage" type="button"
-                        class="inline-flex items-center px-3 py-1.5 bg-purple-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-purple-700 transition ease-in-out duration-150">
+                    <button wire:click="runAiTriage" type="button" {{ $isRateLimited ? 'disabled' : '' }}
+                        class="inline-flex items-center px-3 py-1.5 {{ $isRateLimited ? 'bg-gray-400 cursor-not-allowed' : 'bg-purple-600 hover:bg-purple-700' }} border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest transition ease-in-out duration-150">
                         <span wire:loading.remove wire:target="runAiTriage">Run AI Triage</span>
                         <span wire:loading wire:target="runAiTriage">Running...</span>
                     </button>
@@ -321,8 +345,8 @@
             <div class="p-6">
                 <div class="flex items-center justify-between mb-4">
                     <h4 class="text-md font-semibold text-gray-900">AI Suggested Reply</h4>
-                    <button wire:click="generateReply" type="button"
-                        class="inline-flex items-center px-3 py-1.5 bg-purple-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-purple-700 transition ease-in-out duration-150">
+                    <button wire:click="generateReply" type="button" {{ $isRateLimited ? 'disabled' : '' }}
+                        class="inline-flex items-center px-3 py-1.5 {{ $isRateLimited ? 'bg-gray-400 cursor-not-allowed' : 'bg-purple-600 hover:bg-purple-700' }} border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest transition ease-in-out duration-150">
                         <span wire:loading.remove wire:target="generateReply">Generate Reply</span>
                         <span wire:loading wire:target="generateReply">Generating...</span>
                     </button>

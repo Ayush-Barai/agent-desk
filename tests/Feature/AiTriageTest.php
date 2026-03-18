@@ -198,7 +198,7 @@ test('run ticket triage job handles failure gracefully', function (): void {
     $aiRun->refresh();
 
     expect($aiRun->status)->toBe(AiRunStatus::Failed)
-        ->and($aiRun->error_message)->toBe('API rate limit exceeded')
+        ->and($aiRun->error_message)->toBe('RATE_LIMIT: API rate limit exceeded')
         ->and($aiRun->completed_at)->not->toBeNull();
 });
 
