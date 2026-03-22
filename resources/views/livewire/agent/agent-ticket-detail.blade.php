@@ -431,6 +431,53 @@
             </div>
         </div>
 
+        {{-- AI Thread Summary Panel --}}
+        <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg border-l-4 border-indigo-400">
+            <div class="p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h4 class="text-md font-semibold text-gray-900">AI Thread Summary</h4>
+                    <button wire:click="runThreadSummary" type="button" {{ $isRateLimited ? 'disabled' : '' }}
+                        class="inline-flex items-center px-3 py-1.5 {{ $isRateLimited ? 'bg-gray-400 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700' }} border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest transition ease-in-out duration-150">
+                        <span wire:loading.remove wire:target="runThreadSummary">Summarize</span>
+                        <span wire:loading wire:target="runThreadSummary">Summarizing...</span>
+                    </button>
+                </div>
+
+                @if($latestThreadSummaryRun)
+                    @if(in_array($latestThreadSummaryRun->status->value, ['queued', 'running']))
+                        <div class="text-sm text-blue-600" wire:poll.2s="getLatestThreadSummaryRun">
+                            <span class="inline-flex items-center gap-1">
+                                {{ $latestThreadSummaryRun->status->label() }}...
+                            </span>
+                        </div>
+                    @elseif($latestThreadSummaryRun->status->value === 'succeeded' && $latestThreadSummaryRun->output_json)
+                        <div class="space-y-3">
+                            <div>
+                                <span class="text-xs font-medium text-gray-500 uppercase">Summary</span>
+                                <div class="mt-1 p-3 bg-gray-50 rounded-md text-sm text-gray-700 whitespace-pre-wrap">{{ $latestThreadSummaryRun->output_json['thread_summary'] ?? '—' }}</div>
+                            </div>
+
+                            @if(!empty($latestThreadSummaryRun->output_json['recommended_next_action']))
+                                <div>
+                                    <span class="text-xs font-medium text-gray-500 uppercase">Recommended Next Action</span>
+                                    <div class="mt-1 p-3 bg-green-50 rounded-md text-sm text-green-700">{{ $latestThreadSummaryRun->output_json['recommended_next_action'] }}</div>
+                                </div>
+                            @endif
+
+                            <button wire:click="insertSummaryAsNote('{{ $latestThreadSummaryRun->id }}')" type="button"
+                                class="w-full inline-flex justify-center items-center px-3 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 transition">
+                                Add Summary as Internal Note
+                            </button>
+                        </div>
+                    @elseif($latestThreadSummaryRun->status->value === 'failed')
+                        <p class="text-sm text-red-600">Thread summary failed: {{ $latestThreadSummaryRun->error_message ?? 'Unknown error' }}</p>
+                    @endif
+                @else
+                    <p class="text-sm text-gray-500 italic">Click "Summarize" to generate an AI-powered summary of the entire conversation thread.</p>
+                @endif
+            </div>
+        </div>
+
         {{-- AI Clarifying Questions Placeholder --}}
         <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg border-l-4 border-purple-400">
             <div class="p-6">

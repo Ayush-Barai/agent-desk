@@ -6,6 +6,7 @@ namespace App\Livewire\Agent;
 
 use App\Actions\CreateAuditLog;
 use App\DTOs\ReplyDraftInput;
+use App\DTOs\ThreadSummaryInput;
 use App\DTOs\TriageInput;
 use App\Enums\AiRunStatus;
 use App\Enums\AiRunType;
@@ -14,6 +15,7 @@ use App\Enums\TicketPriority;
 use App\Enums\TicketStatus;
 use App\Jobs\DraftTicketReplyJob;
 use App\Jobs\RunTicketTriageJob;
+use App\Jobs\SummarizeTicketThreadJob;
 use App\Models\AiRun;
 use App\Models\Category;
 use App\Models\Macro;
@@ -609,6 +611,251 @@ final class AgentTicketDetail extends Component
             ->first();
     }
 
+    public function runThreadSummary(): void
+    {
+        /** @var User $user */
+        $user = Auth::user();
+        $ticket = Ticket::query()
+            ->with(['requester'])
+            ->findOrFail($this->ticketId);
+
+        abort_unless($user->can('create', AiRun::class), 403);
+
+        // Check rate limits
+        if (! $this->getRateLimiter()->canRunTriage($user, $ticket)) {
+            $this->isRateLimited = true;
+            $this->rateLimitType = 'thread_summary';
+            $this->rateLimitRetryAfter = max(
+                $this->getRateLimiter()->getRetryAfterPerTicket($user, $ticket),
+                $this->getRateLimiter()->getRetryAfterGlobal($user),
+            );
+            $this->remainingAiAttempts = min(
+                $this->getRateLimiter()->getRemainingPerTicket($user, $ticket),
+                $this->getRateLimiter()->getRemainingGlobal($user),
+            );
+            $this->rateLimitError = sprintf("You've reached the rate limit on AI runs. Try again in %d seconds.", $this->rateLimitRetryAfter);
+            $this->dispatch('rate-limit-hit');
+
+            return;
+        }
+
+        /** @var list<array{role: string, body: string}> $messageHistory */
+        $messageHistory = TicketMessage::query()
+            ->where('ticket_id', $ticket->id)
+            ->with(['author'])
+            ->oldest()
+            ->get()
+            ->map(fn (TicketMessage $m): array => [
+                'role' => $m->type->value === 'internal' ? 'internal_note' : ($m->user_id === $ticket->requester_id ? 'requester' : 'agent'),
+                'body' => $m->body,
+            ])
+            ->values()
+            ->all();
+
+        $input = new ThreadSummaryInput(
+            ticketId: $ticket->id,
+            subject: $ticket->subject,
+            messageHistory: $messageHistory,
+        );
+
+        $inputHash = hash('sha256', json_encode([
+            'ticket_id' => $input->ticketId,
+            'subject' => $input->subject,
+            'message_count' => count($input->messageHistory),
+        ], JSON_THROW_ON_ERROR));
+
+        // Check for in-flight duplicate request
+        $inFlightRun = AiRun::query()
+            ->where('ticket_id', $ticket->id)
+            ->where('run_type', AiRunType::ThreadSummary)
+            ->where('input_hash', $inputHash)
+            ->whereIn('status', [AiRunStatus::Queued, AiRunStatus::Running])
+            ->first();
+
+        if ($inFlightRun instanceof AiRun) {
+            $this->dispatch('info', message: 'This thread summary request is already running. Refresh in a moment to see results.');
+
+            return;
+        }
+
+        // Check for existing successful run with same input
+        $existingRun = AiRun::query()
+            ->where('ticket_id', $ticket->id)
+            ->where('run_type', AiRunType::ThreadSummary)
+            ->where('input_hash', $inputHash)
+            ->where('status', AiRunStatus::Succeeded)
+            ->first();
+
+        if ($existingRun instanceof AiRun) {
+            $this->dispatch('info', message: 'Using cached summary from previous run.');
+
+            return;
+        }
+
+        $aiRun = AiRun::query()->create([
+            'ticket_id' => $ticket->id,
+            'initiated_by_user_id' => $user->id,
+            'run_type' => AiRunType::ThreadSummary,
+            'status' => AiRunStatus::Queued,
+            'input_hash' => $inputHash,
+            'input_json' => [
+                'ticket_id' => $input->ticketId,
+                'subject' => $input->subject,
+                'message_count' => count($input->messageHistory),
+            ],
+        ]);
+
+        // Record the attempt after successfully creating the AI run
+        $this->getRateLimiter()->recordAttempt($user, $ticket);
+
+        dispatch(new SummarizeTicketThreadJob($aiRun->id, $input));
+    }
+
+    public function getLatestThreadSummaryRun(): ?AiRun
+    {
+        return AiRun::query()
+            ->where('ticket_id', $this->ticketId)
+            ->where('run_type', AiRunType::ThreadSummary)
+            ->latest()
+            ->first();
+    }
+    public function runThreadSummary(): void
+    {
+        /** @var User $user */
+        $user = Auth::user();
+        $ticket = Ticket::query()
+            ->with(['requester'])
+            ->findOrFail($this->ticketId);
+
+        abort_unless($user->can('create', AiRun::class), 403);
+
+        // Check rate limits
+        if (! $this->getRateLimiter()->canRunTriage($user, $ticket)) {
+            $this->isRateLimited = true;
+            $this->rateLimitType = 'thread_summary';
+            $this->rateLimitRetryAfter = max(
+                $this->getRateLimiter()->getRetryAfterPerTicket($user, $ticket),
+                $this->getRateLimiter()->getRetryAfterGlobal($user),
+            );
+            $this->remainingAiAttempts = min(
+                $this->getRateLimiter()->getRemainingPerTicket($user, $ticket),
+                $this->getRateLimiter()->getRemainingGlobal($user),
+            );
+            $this->rateLimitError = sprintf("You've reached the rate limit on AI runs. Try again in %d seconds.", $this->rateLimitRetryAfter);
+            $this->dispatch('rate-limit-hit');
+
+            return;
+        }
+
+        /** @var list<array{role: string, body: string}> $messageHistory */
+        $messageHistory = TicketMessage::query()
+            ->where('ticket_id', $ticket->id)
+            ->with(['author'])
+            ->oldest()
+            ->get()
+            ->map(fn (TicketMessage $m): array => [
+                'role' => $m->type->value === 'internal' ? 'internal_note' : ($m->user_id === $ticket->requester_id ? 'requester' : 'agent'),
+                'body' => $m->body,
+            ])
+            ->values()
+            ->all();
+
+        $input = new ThreadSummaryInput(
+            ticketId: $ticket->id,
+            subject: $ticket->subject,
+            messageHistory: $messageHistory,
+        );
+
+        $inputHash = hash('sha256', json_encode([
+            'ticket_id' => $input->ticketId,
+            'subject' => $input->subject,
+            'message_count' => count($input->messageHistory),
+        ], JSON_THROW_ON_ERROR));
+
+        // Check for in-flight duplicate request
+        $inFlightRun = AiRun::query()
+            ->where('ticket_id', $ticket->id)
+            ->where('run_type', AiRunType::ThreadSummary)
+            ->where('input_hash', $inputHash)
+            ->whereIn('status', [AiRunStatus::Queued, AiRunStatus::Running])
+            ->first();
+
+        if ($inFlightRun instanceof AiRun) {
+            $this->dispatch('info', message: 'This thread summary request is already running. Refresh in a moment to see results.');
+
+            return;
+        }
+
+        // Check for existing successful run with same input
+        $existingRun = AiRun::query()
+            ->where('ticket_id', $ticket->id)
+            ->where('run_type', AiRunType::ThreadSummary)
+            ->where('input_hash', $inputHash)
+            ->where('status', AiRunStatus::Succeeded)
+            ->first();
+
+        if ($existingRun instanceof AiRun) {
+            $this->dispatch('info', message: 'Using cached summary from previous run.');
+
+            return;
+        }
+
+        $aiRun = AiRun::query()->create([
+            'ticket_id' => $ticket->id,
+            'initiated_by_user_id' => $user->id,
+            'run_type' => AiRunType::ThreadSummary,
+            'status' => AiRunStatus::Queued,
+            'input_hash' => $inputHash,
+            'input_json' => [
+                'ticket_id' => $input->ticketId,
+                'subject' => $input->subject,
+                'message_count' => count($input->messageHistory),
+            ],
+        ]);
+
+        // Record the attempt after successfully creating the AI run
+        $this->getRateLimiter()->recordAttempt($user, $ticket);
+
+        dispatch(new SummarizeTicketThreadJob($aiRun->id, $input));
+    }
+
+    public function getLatestThreadSummaryRun(): ?AiRun
+    {
+        return AiRun::query()
+            ->where('ticket_id', $this->ticketId)
+            ->where('run_type', AiRunType::ThreadSummary)
+            ->latest()
+            ->first();
+    }
+
+    public function insertSummaryAsNote(string $aiRunId): void
+    {
+        $aiRun = AiRun::query()->findOrFail($aiRunId);
+        $output = $aiRun->output_json;
+
+        if ($output === null) {
+            return;
+        }
+
+        $summary = $output['thread_summary'] ?? '';
+        $nextAction = $output['recommended_next_action'] ?? null;
+
+        $noteText = "**AI Generated Summary**\n\n" . $summary;
+        if ($nextAction) {
+            $noteText .= "\n\n**Recommended Next Action**\n" . $nextAction;
+        }
+
+        if ($this->replyBody !== '' && $this->replyType === 'internal') {
+            $this->replyBody .= "\n\n" . $noteText;
+        } else {
+            $this->replyType = 'internal';
+            $this->replyBody = $noteText;
+        }
+
+        $this->dispatch('summary-applied');
+        $this->resetErrorBag('replyBody');
+    }
+
     /**
      * @return list<TicketStatus>
      */
@@ -680,6 +927,7 @@ final class AgentTicketDetail extends Component
             'macros' => $this->getMacros(),
             'latestTriageRun' => $this->getLatestTriageRun(),
             'latestReplyDraftRun' => $this->getLatestReplyDraftRun(),
+            'latestThreadSummaryRun' => $this->getLatestThreadSummaryRun(),
             'isRateLimited' => $this->isRateLimited,
             'rateLimitError' => $this->rateLimitError,
             'rateLimitRetryAfter' => $this->rateLimitRetryAfter,
