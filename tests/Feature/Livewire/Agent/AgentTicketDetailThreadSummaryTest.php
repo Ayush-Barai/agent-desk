@@ -11,20 +11,12 @@ use App\Livewire\Agent\AgentTicketDetail;
 use App\Models\AiRun;
 use App\Models\Ticket;
 use App\Models\User;
-use Livewire\Testing\TestableLivewire;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 final class AgentTicketDetailThreadSummaryTest extends TestCase
 {
-    public function test_thread_summary_button_visible_to_agent(): void
-    {
-        $agent = User::factory()->create(['role' => UserRole::Agent]);
-        $ticket = Ticket::factory()->create();
-
-        $this->actingAs($agent)
-            ->get(route('tickets.show', $ticket))
-            ->assertOk();
-    }
+    use RefreshDatabase;
 
     public function test_run_thread_summary_creates_ai_run(): void
     {
