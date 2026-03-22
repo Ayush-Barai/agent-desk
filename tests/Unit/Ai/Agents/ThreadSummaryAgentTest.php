@@ -25,6 +25,11 @@ final class ThreadSummaryAgentTest extends TestCase
         $agent = new ThreadSummaryAgent();
 
         expect($agent)->toBeInstanceOf(ThreadSummaryAgent::class);
+
+        // Call schema to verify it returns the expected structure
+        $schema = $agent->schema(new \Illuminate\JsonSchema\JsonSchemaTypeFactory());
+
+        expect($schema)->toHaveKeys(['thread_summary', 'recommended_next_action']);
     }
 
     public function test_dto_structure(): void
