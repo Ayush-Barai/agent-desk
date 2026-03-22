@@ -732,13 +732,13 @@ final class AgentTicketDetail extends Component
         $summary = is_string($output['thread_summary'] ?? null) ? $output['thread_summary'] : '';
         $nextAction = is_string($output['recommended_next_action'] ?? null) ? $output['recommended_next_action'] : null;
 
-        $noteText = "**AI Generated Summary**\n\n" . $summary;
+        $noteText = "**AI Generated Summary**\n\n".$summary;
         if ($nextAction !== null) {
-            $noteText .= "\n\n**Recommended Next Action**\n" . $nextAction;
+            $noteText .= "\n\n**Recommended Next Action**\n".$nextAction;
         }
 
         if ($this->replyBody !== '' && $this->replyType === 'internal') {
-            $this->replyBody .= "\n\n" . $noteText;
+            $this->replyBody .= "\n\n".$noteText;
         } else {
             $this->replyType = 'internal';
             $this->replyBody = $noteText;

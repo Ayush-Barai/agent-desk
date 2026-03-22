@@ -6,6 +6,7 @@ namespace Tests\Unit\Ai\Agents;
 
 use App\Ai\Agents\ThreadSummaryAgent;
 use App\DTOs\ThreadSummaryInput;
+use Illuminate\JsonSchema\JsonSchemaTypeFactory;
 use PHPUnit\Framework\TestCase;
 
 final class ThreadSummaryAgentTest extends TestCase
@@ -27,7 +28,7 @@ final class ThreadSummaryAgentTest extends TestCase
         expect($agent)->toBeInstanceOf(ThreadSummaryAgent::class);
 
         // Call schema to verify it returns the expected structure
-        $schema = $agent->schema(new \Illuminate\JsonSchema\JsonSchemaTypeFactory());
+        $schema = $agent->schema(new JsonSchemaTypeFactory());
 
         expect($schema)->toHaveKeys(['thread_summary', 'recommended_next_action']);
     }

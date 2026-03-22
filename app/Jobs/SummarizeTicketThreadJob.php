@@ -40,7 +40,7 @@ final class SummarizeTicketThreadJob implements ShouldQueue
 
         try {
             $messageHistoryText = implode("\n\n", array_map(
-                fn (array $msg): string => "[{$msg['role']}]: {$msg['body']}",
+                fn (array $msg): string => sprintf('[%s]: %s', $msg['role'], $msg['body']),
                 $this->input->messageHistory
             ));
 

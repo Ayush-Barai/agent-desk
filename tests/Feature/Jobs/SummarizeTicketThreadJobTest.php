@@ -12,6 +12,7 @@ use App\Jobs\SummarizeTicketThreadJob;
 use App\Models\AiRun;
 use App\Models\Ticket;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use RuntimeException;
 use Tests\TestCase;
 
 final class SummarizeTicketThreadJobTest extends TestCase
@@ -96,7 +97,7 @@ final class SummarizeTicketThreadJobTest extends TestCase
             'status' => AiRunStatus::Queued,
         ]);
 
-        ThreadSummaryAgent::fake([fn (): never => throw new \RuntimeException('API error')]);
+        ThreadSummaryAgent::fake([fn (): never => throw new RuntimeException('API error')]);
 
         $input = new ThreadSummaryInput(
             ticketId: $ticket->id,
@@ -124,7 +125,7 @@ final class SummarizeTicketThreadJobTest extends TestCase
             'status' => AiRunStatus::Queued,
         ]);
 
-        ThreadSummaryAgent::fake([fn (): never => throw new \RuntimeException('Rate limit exceeded')]);
+        ThreadSummaryAgent::fake([fn (): never => throw new RuntimeException('Rate limit exceeded')]);
 
         $input = new ThreadSummaryInput(
             ticketId: $ticket->id,
@@ -142,4 +143,3 @@ final class SummarizeTicketThreadJobTest extends TestCase
             ->and($aiRun->completed_at)->not->toBeNull();
     }
 }
-

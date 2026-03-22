@@ -14,7 +14,9 @@ use App\Models\TicketMessage;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Bus;
+use Illuminate\Support\Facades\RateLimiter;
 use Livewire\Livewire;
+use Mockery;
 use Tests\TestCase;
 
 final class AgentTicketDetailThreadSummaryTest extends TestCase
@@ -69,7 +71,7 @@ final class AgentTicketDetailThreadSummaryTest extends TestCase
     {
         $ticket = Ticket::factory()->create();
 
-        $run1 = AiRun::factory()->create([
+        AiRun::factory()->create([
             'ticket_id' => $ticket->id,
             'run_type' => AiRunType::ThreadSummary,
             'status' => AiRunStatus::Succeeded,
@@ -190,7 +192,7 @@ final class AgentTicketDetailThreadSummaryTest extends TestCase
         $agent = User::factory()->agent()->create();
         $ticket = Ticket::factory()->create();
 
-        $run1 = AiRun::factory()->create([
+        AiRun::factory()->create([
             'ticket_id' => $ticket->id,
             'run_type' => AiRunType::ThreadSummary,
             'created_at' => now()->subMinutes(5),
@@ -264,7 +266,7 @@ final class AgentTicketDetailThreadSummaryTest extends TestCase
             'message_count' => 2,
         ], JSON_THROW_ON_ERROR));
 
-        $inFlightRun = AiRun::factory()->create([
+        AiRun::factory()->create([
             'ticket_id' => $ticket->id,
             'run_type' => AiRunType::ThreadSummary,
             'status' => AiRunStatus::Queued,
@@ -290,7 +292,7 @@ final class AgentTicketDetailThreadSummaryTest extends TestCase
             'message_count' => 2,
         ], JSON_THROW_ON_ERROR));
 
-        $cachedRun = AiRun::factory()->create([
+        AiRun::factory()->create([
             'ticket_id' => $ticket->id,
             'run_type' => AiRunType::ThreadSummary,
             'status' => AiRunStatus::Succeeded,
@@ -302,5 +304,53 @@ final class AgentTicketDetailThreadSummaryTest extends TestCase
             ->call('runThreadSummary')
             ->assertDispatched('info');
     }
-}
 
+    public function test_run_thread_summary_rate_limited(): void
+    {
+        $agent = User::factory()->agent()->create();
+        $ticket = Ticket::factory()->create();
+        TicketMessage::factory(2)->create(['ticket_id' => $ticket->id]);
+
+        // Mock the RateLimiter facade to simulate being at the limit.
+        // The AiRateLimiter uses 'ai:triage:user:{id}:ticket:{id}' for its keys.
+        $perTicketKey = sprintf('ai:triage:user:%s:ticket:%s', $agent->id, $ticket->id);
+        $globalKey = 'ai:global:user:'.$agent->id;
+
+        RateLimiter::shouldReceive('tooManyAttempts')
+            ->with($perTicketKey, Mockery::any())
+            ->andReturn(true);
+
+        RateLimiter::shouldReceive('availableIn')
+            ->with($perTicketKey)
+            ->andReturn(120);
+
+        RateLimiter::shouldReceive('attempts')
+            ->with($perTicketKey)
+            ->andReturn(10);
+
+        RateLimiter::shouldReceive('tooManyAttempts')
+            ->with($globalKey, Mockery::any())
+            ->andReturn(false);
+
+        RateLimiter::shouldReceive('availableIn')
+            ->with($globalKey)
+            ->andReturn(0);
+
+        RateLimiter::shouldReceive('attempts')
+            ->with($globalKey)
+            ->andReturn(0);
+
+        // Allow other possible calls like livewire validation
+        RateLimiter::shouldReceive('tooManyAttempts')->andReturn(false);
+        RateLimiter::shouldReceive('availableIn')->andReturn(0);
+        RateLimiter::shouldReceive('attempts')->andReturn(0);
+
+        Livewire::actingAs($agent)
+            ->test(AgentTicketDetail::class, ['ticket' => $ticket])
+            ->call('runThreadSummary')
+            ->assertSet('isRateLimited', true)
+            ->assertSet('rateLimitType', 'thread_summary')
+            ->assertSet('rateLimitRetryAfter', 120)
+            ->assertDispatched('rate-limit-hit');
+    }
+}
