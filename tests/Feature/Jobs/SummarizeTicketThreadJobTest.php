@@ -10,11 +10,12 @@ use App\Enums\AiRunType;
 use App\Jobs\SummarizeTicketThreadJob;
 use App\Models\AiRun;
 use App\Models\Ticket;
-use Illuminate\Support\Facades\Queue;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 final class SummarizeTicketThreadJobTest extends TestCase
 {
+    use RefreshDatabase;
     public function test_job_marks_ai_run_as_running(): void
     {
         $ticket = Ticket::factory()->create();
