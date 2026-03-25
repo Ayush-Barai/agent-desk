@@ -9,6 +9,7 @@ use App\Enums\AiRunType;
 use App\Enums\TicketMessageType;
 use App\Enums\TicketPriority;
 use App\Enums\TicketStatus;
+use App\Enums\UserRole;
 use App\Models\AiRun;
 use App\Models\Category;
 use App\Models\KnowledgeBaseArticle;
@@ -19,6 +20,7 @@ use App\Models\Ticket;
 use App\Models\TicketMessage;
 use App\Models\User;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Hash;
 
 final class DatabaseSeeder extends Seeder
 {
@@ -26,22 +28,22 @@ final class DatabaseSeeder extends Seeder
     {
         User::query()->firstOrCreate(['email' => 'admin@agentdesk.test'], [
             'name' => 'Admin User',
-            'password' => \Illuminate\Support\Facades\Hash::make('password'),
-            'role' => \App\Enums\UserRole::Admin,
+            'password' => Hash::make('password'),
+            'role' => UserRole::Admin,
             'email_verified_at' => now(),
         ]);
 
         User::query()->firstOrCreate(['email' => 'agent@agentdesk.test'], [
             'name' => 'Agent User',
-            'password' => \Illuminate\Support\Facades\Hash::make('password'),
-            'role' => \App\Enums\UserRole::Agent,
+            'password' => Hash::make('password'),
+            'role' => UserRole::Agent,
             'email_verified_at' => now(),
         ]);
 
         User::query()->firstOrCreate(['email' => 'requester@agentdesk.test'], [
             'name' => 'Requester User',
-            'password' => \Illuminate\Support\Facades\Hash::make('password'),
-            'role' => \App\Enums\UserRole::Requester,
+            'password' => Hash::make('password'),
+            'role' => UserRole::Requester,
             'email_verified_at' => now(),
         ]);
 
@@ -227,7 +229,7 @@ final class DatabaseSeeder extends Seeder
             'body' => 'Your subscription has been successfully cancelled as of today. You will receive a refund of $29.99 to your original payment method within 3-5 business days. Thank you for being a customer!',
         ]);
 
-        /** @var \App\Models\Category|null $generalCategory */
+        /** @var Category|null $generalCategory */
         $generalCategory = Category::query()->where('name', 'General Inquiry')->first();
 
         // Create 10 additional agents
@@ -245,7 +247,7 @@ final class DatabaseSeeder extends Seeder
 
                     $assignedAgent = null;
                     if ($status !== TicketStatus::New) {
-                        $assignedAgent = User::query()->where('role', \App\Enums\UserRole::Agent)->inRandomOrder()->first();
+                        $assignedAgent = User::query()->where('role', UserRole::Agent)->inRandomOrder()->first();
                     }
 
                     $ticket = Ticket::query()->create([
