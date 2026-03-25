@@ -243,6 +243,7 @@ final class DatabaseSeeder extends Seeder
                 for ($i = 0; $i < $count; $i++) {
                     $status = fake()->randomElement(TicketStatus::cases());
                     $priority = fake()->randomElement(TicketPriority::cases());
+                    /** @var Category|null $category */
                     $category = fake()->randomElement([$techCategory, $billingCategory, $generalCategory]);
 
                     $assignedAgent = null;
