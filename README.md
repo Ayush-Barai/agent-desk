@@ -102,17 +102,6 @@ AI_PROVIDER=groq
 GROQ_API_KEY=gsk_your_api_key_here
 ```
 
-### Model configuration
-
-The default model is set in `.env`:
-
-```env
-GROQ_MODEL=llama-3.3-70b-versatile
-```
-
-This is configured in `config/ai.php` under the Groq provider. You can switch to any Groq-supported model by changing this value.
-
-
 ### Key Generation
 
 ```bash
