@@ -16,14 +16,14 @@ AI features assist human agents by automatically triaging tickets and drafting r
 
 ```
 ┌─────────────┐     ┌──────────────────┐     ┌─────────────┐
-│  Livewire   │────▶│  Actions/Jobs    │────▶│  AI Agents  │
+│  Livewire   │────▶│  Actions/Jobs    │───▶│  AI Agents  │
 │  Components │     │  (queued)        │     │  (Groq LLM) │
 └─────────────┘     └──────────────────┘     └─────────────┘
        │                    │                       │
        ▼                    ▼                       ▼
 ┌─────────────┐     ┌──────────────────┐     ┌─────────────┐
 │  Blade      │     │  Models / DTOs   │     │  ai_runs    │
-│  Templates  │     │  Policies        │     │  (tracking)  │
+│  Templates  │     │  Policies        │     │  (tracking) │
 └─────────────┘     └──────────────────┘     └─────────────┘
 ```
 
@@ -226,35 +226,6 @@ composer lint
 This project was built incrementally across 15 branches. Each branch builds on the previous and must pass all quality gates before merging.
 
 > **Important:** All branches are local. Do not push automatically. Each branch must pass `composer test` before merging into `main`.
-
-| # | Branch | Description |
-|---|---|---|
-| 1 | `chore/project-setup` | Install Breeze, Livewire 4, Laravel AI SDK, configure Groq |
-| 2 | `feat/auth-roles-layout` | User roles, role middleware, role-aware navigation |
-| 3 | `feat/domain-models-migrations` | Domain models, migrations, factories, DTOs, enums |
-| 4 | `feat/policies-and-rbac` | Policies and RBAC authorization |
-| 5 | `feat/requester-ticketing` | Requester ticket create, list, and detail views |
-| 6 | `feat/agent-triage-workflow` | Agent triage workflow with Livewire components |
-| 7 | `feat/attachments-security` | Secure attachment upload and download with authorization |
-| 8 | `feat/admin-config-crud` | Admin CRUD for categories, macros, KB articles, support targets |
-| 9 | `feat/notifications-and-audit` | Notification classes, audit logging, audit viewer |
-| 10 | `feat/ai-triage` | AI triage agent with structured output and job processing |
-| 11 | `feat/ai-reply-draft` | AI reply draft with KB tool integration |
-| 12 | `feat/overdue-scheduler` | Overdue target checks with scheduler and duplicate protection |
-| 13 | `feat/admin-ai-runs-and-reports` | AI run list/detail views and agent work reports |
-| 14 | `test/full-hardening` | N+1 fixes, query optimization, browser test fix |
-| 15 | `docs/readme-demo-script` | README, setup guide, demo script, final documentation |
-
-### Merging a branch
-
-```bash
-# Verify all checks pass
-composer test
-
-# Merge into main (fast-forward only)
-git checkout main
-git merge --ff-only <branch-name>
-```
 
 ## AI architecture
 
