@@ -47,7 +47,7 @@
                         </a>
                         <a href="{{ route('admin.targets.index') }}"
                             class="inline-flex items-center gap-1.5 px-3 py-2 rounded-md text-sm font-medium transition duration-150 {{ request()->routeIs('admin.targets.*') ? 'bg-indigo-50 text-indigo-700' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100' }}">
-                            Response Targets (SLA)
+                            Response Targets 
                         </a>
                         <a href="{{ route('admin.kb-articles.index') }}"
                             class="inline-flex items-center gap-1.5 px-3 py-2 rounded-md text-sm font-medium transition duration-150 {{ request()->routeIs('admin.kb-articles.*') ? 'bg-indigo-50 text-indigo-700' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100' }}">

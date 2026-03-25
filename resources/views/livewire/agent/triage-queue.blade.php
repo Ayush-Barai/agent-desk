@@ -20,7 +20,7 @@
             </thead>
             <tbody class="bg-white divide-y divide-gray-200">
                 @forelse($tickets as $ticket)
-                    <tr wire:key="triage-{{ $ticket->id }}">
+                    <tr wire:key="triage-{{ $ticket->id }}" class="hover:bg-gray-50 transition ease-in-out duration-200">
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                             {{ Str::limit($ticket->subject, 60) }}
                         </td>
@@ -34,7 +34,19 @@
                             {{ $ticket->created_at->diffForHumans() }}
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                            <a href="{{ route('agent.tickets.show', $ticket) }}" wire:navigate class="text-indigo-600 hover:text-indigo-900">View</a>
+                            <div class="flex items-center justify-end gap-3">
+                                <a href="{{ route('agent.tickets.show', $ticket) }}" wire:navigate class="text-indigo-600 hover:text-indigo-900">View</a>
+                                
+                                @if(auth()->user()->isAdmin())
+                                    <button 
+                                        wire:click="deleteTicket('{{ $ticket->id }}')" 
+                                        wire:confirm="Are you sure you want to delete this ticket?"
+                                        class="text-red-600 hover:text-red-900 focus:outline-none transition ease-in-out duration-200"
+                                        title="Delete Ticket">
+                                        Delete
+                                    </button>
+                                @endif
+                            </div>
                         </td>
                     </tr>
                 @empty

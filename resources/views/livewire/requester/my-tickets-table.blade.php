@@ -45,7 +45,7 @@
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200">
                     @foreach($tickets as $ticket)
-                        <tr class="hover:bg-gray-50 cursor-pointer" wire:key="{{ $ticket->id }}">
+                        <tr class="hover:bg-gray-50 transition ease-in-out duration-200 cursor-pointer" wire:key="ticket-{{ $ticket->id }}">
                             <td class="px-6 py-4">
                                 <a href="{{ route('requester.tickets.show', $ticket) }}" wire:navigate class="text-indigo-600 hover:text-indigo-800 font-medium">
                                     {{ $ticket->subject }}

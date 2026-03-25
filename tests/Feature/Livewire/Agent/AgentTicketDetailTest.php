@@ -515,3 +515,27 @@ test('insert macro does nothing when no macro selected', function (): void {
         ->assertSet('replyBody', 'Existing text')
         ->assertSet('selectedMacroId', '');
 });
+
+test('admin can delete ticket from agent detail', function (): void {
+    $admin = User::factory()->admin()->create();
+    $ticket = Ticket::factory()->create();
+
+    Livewire::actingAs($admin)
+        ->test(AgentTicketDetail::class, ['ticket' => $ticket])
+        ->call('deleteTicket')
+        ->assertRedirect(route('agent.tickets.index'));
+
+    $this->assertDatabaseMissing('tickets', ['id' => $ticket->id]);
+});
+
+test('agent cannot delete ticket from agent detail', function (): void {
+    $agent = User::factory()->agent()->create();
+    $ticket = Ticket::factory()->create();
+
+    Livewire::actingAs($agent)
+        ->test(AgentTicketDetail::class, ['ticket' => $ticket])
+        ->call('deleteTicket')
+        ->assertForbidden();
+
+    $this->assertDatabaseHas('tickets', ['id' => $ticket->id]);
+});

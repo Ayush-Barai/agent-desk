@@ -126,3 +126,33 @@ test('triage queue resets page on search', function (): void {
         ->set('search', 'test')
         ->assertSet('search', 'test');
 });
+
+test('admin can delete ticket from triage queue', function (): void {
+    $admin = User::factory()->admin()->create();
+    $ticket = Ticket::factory()->create([
+        'status' => TicketStatus::New,
+        'assigned_to_user_id' => null,
+    ]);
+
+    Livewire::actingAs($admin)
+        ->test(TriageQueue::class)
+        ->call('deleteTicket', $ticket)
+        ->assertDispatched('ticket-deleted');
+
+    $this->assertDatabaseMissing('tickets', ['id' => $ticket->id]);
+});
+
+test('agent cannot delete ticket from triage queue', function (): void {
+    $agent = User::factory()->agent()->create();
+    $ticket = Ticket::factory()->create([
+        'status' => TicketStatus::New,
+        'assigned_to_user_id' => null,
+    ]);
+
+    Livewire::actingAs($agent)
+        ->test(TriageQueue::class)
+        ->call('deleteTicket', $ticket)
+        ->assertForbidden();
+
+    $this->assertDatabaseHas('tickets', ['id' => $ticket->id]);
+});

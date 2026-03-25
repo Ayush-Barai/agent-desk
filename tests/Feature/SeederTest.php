@@ -12,7 +12,7 @@ use App\Models\User;
 test('database seeder creates expected data', function (): void {
     $this->seed();
 
-    expect(User::query()->count())->toBe(3)
+    expect(User::query()->count())->toBe(63)
         ->and(Category::query()->count())->toBe(3)
         ->and(Tag::query()->count())->toBe(3)
         ->and(Macro::query()->count())->toBe(1)

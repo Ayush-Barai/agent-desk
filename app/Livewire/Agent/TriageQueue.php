@@ -6,8 +6,10 @@ namespace App\Livewire\Agent;
 
 use App\Enums\TicketStatus;
 use App\Models\Ticket;
+use App\Models\User;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Contracts\View\View;
+use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Url;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -40,6 +42,17 @@ final class TriageQueue extends Component
         }
 
         return $query->paginate(15);
+    }
+
+    public function deleteTicket(Ticket $ticket): void
+    {
+        /** @var User $user */
+        $user = Auth::user();
+        abort_unless($user->isAdmin(), 403);
+
+        $ticket->delete();
+
+        $this->dispatch('ticket-deleted');
     }
 
     public function render(): View

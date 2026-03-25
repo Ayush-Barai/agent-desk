@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Livewire\Admin;
 
 use App\Models\AiRun;
+use App\Models\Ticket;
 use App\Models\User;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Contracts\View\View;
@@ -66,6 +67,17 @@ final class AiRunList extends Component
         }
 
         return $query->paginate(20);
+    }
+
+    public function deleteTicket(Ticket $ticket): void
+    {
+        /** @var User $user */
+        $user = Auth::user();
+        abort_unless($user->isAdmin(), 403);
+
+        $ticket->delete();
+
+        $this->dispatch('ticket-deleted');
     }
 
     public function render(): View

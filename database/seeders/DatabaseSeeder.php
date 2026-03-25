@@ -9,6 +9,7 @@ use App\Enums\AiRunType;
 use App\Enums\TicketMessageType;
 use App\Enums\TicketPriority;
 use App\Enums\TicketStatus;
+use App\Enums\UserRole;
 use App\Models\AiRun;
 use App\Models\Category;
 use App\Models\KnowledgeBaseArticle;
@@ -19,50 +20,56 @@ use App\Models\Ticket;
 use App\Models\TicketMessage;
 use App\Models\User;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Hash;
 
 final class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
-        User::factory()->admin()->create([
+        User::query()->firstOrCreate(['email' => 'admin@agentdesk.test'], [
             'name' => 'Admin User',
-            'email' => 'admin@agentdesk.test',
+            'password' => Hash::make('password'),
+            'role' => UserRole::Admin,
+            'email_verified_at' => now(),
         ]);
 
-        User::factory()->agent()->create([
+        User::query()->firstOrCreate(['email' => 'agent@agentdesk.test'], [
             'name' => 'Agent User',
-            'email' => 'agent@agentdesk.test',
+            'password' => Hash::make('password'),
+            'role' => UserRole::Agent,
+            'email_verified_at' => now(),
         ]);
 
-        User::factory()->requester()->create([
+        User::query()->firstOrCreate(['email' => 'requester@agentdesk.test'], [
             'name' => 'Requester User',
-            'email' => 'requester@agentdesk.test',
+            'password' => Hash::make('password'),
+            'role' => UserRole::Requester,
+            'email_verified_at' => now(),
         ]);
 
-        Category::factory()->create(['name' => 'Billing']);
-        Category::factory()->create(['name' => 'Technical Support']);
-        Category::factory()->create(['name' => 'General Inquiry']);
+        Category::query()->firstOrCreate(['name' => 'Billing']);
+        Category::query()->firstOrCreate(['name' => 'Technical Support']);
+        Category::query()->firstOrCreate(['name' => 'General Inquiry']);
 
-        Tag::factory()->create(['name' => 'bug', 'color' => '#ef4444']);
-        Tag::factory()->create(['name' => 'feature-request', 'color' => '#3b82f6']);
-        Tag::factory()->create(['name' => 'urgent', 'color' => '#f59e0b']);
+        Tag::query()->firstOrCreate(['name' => 'bug'], ['color' => '#ef4444']);
+        Tag::query()->firstOrCreate(['name' => 'feature-request'], ['color' => '#3b82f6']);
+        Tag::query()->firstOrCreate(['name' => 'urgent'], ['color' => '#f59e0b']);
 
-        Macro::factory()->create([
-            'title' => 'Greeting',
+        Macro::query()->firstOrCreate(['title' => 'Greeting'], [
             'body' => 'Hello! Thank you for reaching out. How can we help you today?',
         ]);
 
-        SupportTargetConfig::factory()->create();
+        if (SupportTargetConfig::query()->doesntExist()) {
+            SupportTargetConfig::factory()->create();
+        }
 
-        KnowledgeBaseArticle::factory()->create([
+        KnowledgeBaseArticle::query()->firstOrCreate(['slug' => 'getting-started'], [
             'title' => 'Getting Started',
-            'slug' => 'getting-started',
             'body' => 'Welcome to AgentDesk. This guide will help you get started with our platform.',
         ]);
 
-        KnowledgeBaseArticle::factory()->create([
+        KnowledgeBaseArticle::query()->firstOrCreate(['slug' => 'password-reset'], [
             'title' => 'Password Reset',
-            'slug' => 'password-reset',
             'body' => 'To reset your password, click the "Forgot Password" link on the login page.',
         ]);
 
@@ -221,5 +228,62 @@ final class DatabaseSeeder extends Seeder
             'type' => TicketMessageType::Public,
             'body' => 'Your subscription has been successfully cancelled as of today. You will receive a refund of $29.99 to your original payment method within 3-5 business days. Thank you for being a customer!',
         ]);
+
+        /** @var Category|null $generalCategory */
+        $generalCategory = Category::query()->where('name', 'General Inquiry')->first();
+
+        // Create 10 additional agents
+        User::factory()->count(10)->agent()->create();
+
+        // Create 50 additional requesters and random tickets for them
+        User::factory()->count(50)->requester()->create()->each(function (User $requester) use ($techCategory, $billingCategory, $generalCategory, $targetConfig): void {
+            // 60% chance to have 1-3 tickets
+            if (fake()->boolean(60)) {
+                $count = fake()->numberBetween(1, 3);
+                for ($i = 0; $i < $count; $i++) {
+                    $status = fake()->randomElement(TicketStatus::cases());
+                    $priority = fake()->randomElement(TicketPriority::cases());
+                    /** @var Category|null $category */
+                    $category = fake()->randomElement([$techCategory, $billingCategory, $generalCategory]);
+
+                    $assignedAgent = null;
+                    if ($status !== TicketStatus::New) {
+                        $assignedAgent = User::query()->where('role', UserRole::Agent)->inRandomOrder()->first();
+                    }
+
+                    $ticket = Ticket::query()->create([
+                        'requester_id' => $requester->id,
+                        'assigned_to_user_id' => $assignedAgent?->id,
+                        'category_id' => $category?->id,
+                        'status' => $status,
+                        'priority' => $priority,
+                        'subject' => fake()->sentence(),
+                        'description' => fake()->paragraph(),
+                        'last_requester_message_at' => now()->subHours(fake()->numberBetween(1, 72)),
+                        'first_response_due_at' => now()->addHours((int) $targetConfig->first_response_hours),
+                        'resolution_due_at' => now()->addHours((int) $targetConfig->resolution_hours),
+                    ]);
+
+                    // Initial message
+                    TicketMessage::query()->create([
+                        'ticket_id' => $ticket->id,
+                        'user_id' => $requester->id,
+                        'type' => TicketMessageType::Public,
+                        'body' => $ticket->description,
+                    ]);
+
+                    // If not new, add an agent reply
+                    if ($status !== TicketStatus::New && $assignedAgent) {
+                        TicketMessage::query()->create([
+                            'ticket_id' => $ticket->id,
+                            'user_id' => $assignedAgent->id,
+                            'type' => TicketMessageType::Public,
+                            'body' => fake()->paragraph(),
+                        ]);
+                        $ticket->update(['last_agent_message_at' => now()]);
+                    }
+                }
+            }
+        });
     }
 }

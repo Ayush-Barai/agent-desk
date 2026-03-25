@@ -18,16 +18,13 @@ final readonly class AiRateLimiter
 
     public function __construct()
     {
-        /** @var int $perTicketLimit */
         $perTicketLimit = config('ai.rate_limits.triage_per_ticket_hour', 5);
-        /** @var int $perUserGlobalLimit */
         $perUserGlobalLimit = config('ai.rate_limits.global_per_user_hour', 20);
-        /** @var int $windowSeconds */
         $windowSeconds = config('ai.rate_limits.window_seconds', 3600);
 
-        $this->perTicketLimit = $perTicketLimit;
-        $this->perUserGlobalLimit = $perUserGlobalLimit;
-        $this->windowSeconds = $windowSeconds;
+        $this->perTicketLimit = is_numeric($perTicketLimit) ? (int) $perTicketLimit : 5;
+        $this->perUserGlobalLimit = is_numeric($perUserGlobalLimit) ? (int) $perUserGlobalLimit : 20;
+        $this->windowSeconds = is_numeric($windowSeconds) ? (int) $windowSeconds : 3600;
     }
 
     /**
