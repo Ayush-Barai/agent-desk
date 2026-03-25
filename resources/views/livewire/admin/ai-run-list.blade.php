@@ -31,7 +31,6 @@
                     <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Ticket</th>
                     <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Initiated By</th>
                     <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Provider</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Model</th>
                     <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Created</th>
                     <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Completed</th>
                     <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Actions</th>
@@ -46,19 +45,38 @@
                                 {{ $run->status->label() }}
                             </span>
                         </td>
-                        <td class="whitespace-nowrap px-6 py-4 text-sm text-gray-900">{{ $run->ticket?->subject ?? 'N/A' }}</td>
+                        <td class="whitespace-nowrap px-6 py-4 text-sm text-gray-900">
+                            @if($run->ticket)
+                                <a href="{{ route('agent.tickets.show', $run->ticket) }}" class="text-indigo-600 hover:text-indigo-900" wire:navigate>
+                                    {{ Str::limit($run->ticket->subject, 40) }}
+                                </a>
+                            @else
+                                N/A
+                            @endif
+                        </td>
                         <td class="whitespace-nowrap px-6 py-4 text-sm text-gray-500">{{ $run->initiator?->name ?? 'System' }}</td>
                         <td class="whitespace-nowrap px-6 py-4 text-sm text-gray-500">{{ $run->provider ?? '—' }}</td>
-                        <td class="whitespace-nowrap px-6 py-4 text-sm text-gray-500">{{ $run->model ?? '—' }}</td>
                         <td class="whitespace-nowrap px-6 py-4 text-sm text-gray-500">{{ $run->created_at->format('M d, Y H:i') }}</td>
                         <td class="whitespace-nowrap px-6 py-4 text-sm text-gray-500">{{ $run->completed_at?->format('M d, Y H:i') ?? '—' }}</td>
                         <td class="whitespace-nowrap px-6 py-4 text-sm">
-                            <a href="{{ route('admin.ai-runs.show', $run) }}" class="text-indigo-600 hover:text-indigo-900" wire:navigate>View</a>
+                            <div class="flex items-center gap-3">
+                                <a href="{{ route('admin.ai-runs.show', $run) }}" class="text-indigo-600 hover:text-indigo-900" wire:navigate title="View Run Details">View</a>
+                                
+                                @if($run->ticket)
+                                    <button 
+                                        wire:click="deleteTicket('{{ $run->ticket->id }}')" 
+                                        wire:confirm="Are you sure you want to delete this ticket?"
+                                        class="text-red-600 hover:text-red-900 focus:outline-none transition ease-in-out duration-200"
+                                        title="Delete Ticket">
+                                        Delete
+                                    </button>
+                                @endif
+                            </div>
                         </td>
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="9" class="px-6 py-4 text-center text-sm text-gray-500">No AI runs found.</td>
+                        <td colspan="8" class="px-6 py-4 text-center text-sm text-gray-500">No AI runs found.</td>
                     </tr>
                 @endforelse
             </tbody>

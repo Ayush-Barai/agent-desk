@@ -1,2 +1,12 @@
 @import "tailwindcss";
 @plugin "@tailwindcss/forms";
+
+@layer base {
+    input,
+    select,
+    textarea,
+    button,
+    a {
+        @apply transition duration-200 ease-in-out;
+    }
+}

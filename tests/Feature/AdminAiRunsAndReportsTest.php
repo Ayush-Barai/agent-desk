@@ -288,16 +288,6 @@ test('agent work report shows agent metrics', function (): void {
         ->assertSeeInOrder(['Test Agent', '1', '1', '1', '1', '1', '1']);
 });
 
-test('agent work report shows empty state when no agents', function (): void {
-    $admin = User::factory()->admin()->create();
-
-    // Remove all non-admin users — only admin remains
-    // Admin is shown in reports (since isStaff = true, and report queries Admin + Agent roles)
-    Livewire::actingAs($admin)
-        ->test(AgentWorkReport::class)
-        ->assertSee($admin->name);
-});
-
 test('agent work report includes admins in metrics', function (): void {
     $admin = User::factory()->admin()->create(['name' => 'Admin User']);
 
@@ -311,7 +301,44 @@ test('agent work report includes admins in metrics', function (): void {
 
     Livewire::actingAs($admin)
         ->test(AgentWorkReport::class)
-        ->assertSee('Admin User');
+        ->assertSee('Admin User')
+        ->assertSeeInOrder(['Admin User', '1', '0', '0', '0', '0', '1']);
+});
+
+test('admin can delete ticket from ai run list', function (): void {
+    $admin = User::factory()->admin()->create();
+    $ticket = Ticket::factory()->create();
+    $aiRun = AiRun::factory()->create(['ticket_id' => $ticket->id]);
+
+    Livewire::actingAs($admin)
+        ->test(AiRunList::class)
+        ->call('deleteTicket', $ticket)
+        ->assertDispatched('ticket-deleted');
+
+    $this->assertDatabaseMissing('tickets', ['id' => $ticket->id]);
+});
+
+test('agent cannot delete ticket from ai run list', function (): void {
+    $agent = User::factory()->agent()->create();
+    $ticket = Ticket::factory()->create();
+    $aiRun = AiRun::factory()->create(['ticket_id' => $ticket->id]);
+
+    Livewire::actingAs($agent)
+        ->test(AiRunList::class)
+        ->call('deleteTicket', $ticket)
+        ->assertForbidden();
+
+    $this->assertDatabaseHas('tickets', ['id' => $ticket->id]);
+});
+
+test('agent work report shows empty state when no agents', function (): void {
+    $admin = User::factory()->admin()->create();
+
+    // Remove all non-admin users — only admin remains
+    // Admin is shown in reports (since isStaff = true, and report queries Admin + Agent roles)
+    Livewire::actingAs($admin)
+        ->test(AgentWorkReport::class)
+        ->assertSee($admin->name);
 });
 
 test('agent work report shows zero metrics for agent with no activity', function (): void {

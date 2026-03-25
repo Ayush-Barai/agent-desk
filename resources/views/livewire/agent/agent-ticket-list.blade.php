@@ -1,15 +1,23 @@
 <div>
     <div class="mb-4 flex flex-wrap items-center gap-4">
+        @if(!auth()->user()->isAdmin())
         <div class="flex rounded-md shadow-sm">
             <button wire:click="$set('scope', 'mine')"
-                class="px-4 py-2 text-sm font-medium {{ $scope === 'mine' ? 'bg-indigo-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50' }} border rounded-l-md">
+                class="px-4 py-2 text-sm font-medium {{ $scope === 'mine' ? 'bg-indigo-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50 transition ease-in-out duration-200' }} border rounded-l-md">
                 My Tickets
             </button>
             <button wire:click="$set('scope', 'all')"
-                class="px-4 py-2 text-sm font-medium {{ $scope === 'all' ? 'bg-indigo-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50' }} border-t border-b border-r rounded-r-md">
+                class="px-4 py-2 text-sm font-medium {{ $scope === 'all' ? 'bg-indigo-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50 transition ease-in-out duration-200' }} border-t border-b border-r rounded-r-md">
                 All Tickets
             </button>
         </div>
+        @else
+        <div class="flex rounded-md shadow-sm">
+             <span class="px-4 py-2 text-sm font-medium bg-indigo-600 text-white border rounded-md">
+                All Tickets
+            </span>
+        </div>
+        @endif
 
         <input wire:model.live.debounce.300ms="search" type="text" placeholder="Search..."
             class="rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
@@ -46,7 +54,7 @@
             </thead>
             <tbody class="bg-white divide-y divide-gray-200">
                 @forelse($tickets as $ticket)
-                    <tr wire:key="ticket-{{ $ticket->id }}">
+                    <tr wire:key="ticket-{{ $ticket->id }}" class="hover:bg-gray-50 transition ease-in-out duration-200">
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                             {{ Str::limit($ticket->subject, 50) }}
                         </td>
@@ -74,7 +82,19 @@
                             {{ $ticket->updated_at->diffForHumans() }}
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                            <a href="{{ route('agent.tickets.show', $ticket) }}" wire:navigate class="text-indigo-600 hover:text-indigo-900">View</a>
+                            <div class="flex items-center justify-end gap-3">
+                                <a href="{{ route('agent.tickets.show', $ticket) }}" wire:navigate class="text-indigo-600 hover:text-indigo-900">View</a>
+                                
+                                @if(auth()->user()->isAdmin())
+                                    <button 
+                                        wire:click="deleteTicket('{{ $ticket->id }}')" 
+                                        wire:confirm="Are you sure you want to delete this ticket?"
+                                        class="text-red-600 hover:text-red-900 focus:outline-none transition ease-in-out duration-200"
+                                        title="Delete Ticket">
+                                        Delete
+                                    </button>
+                                @endif
+                            </div>
                         </td>
                     </tr>
                 @empty

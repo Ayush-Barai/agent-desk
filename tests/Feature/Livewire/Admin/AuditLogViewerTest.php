@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Livewire\Admin\AuditLogViewer;
 use App\Models\AuditLog;
+use App\Models\Ticket;
 use App\Models\User;
 use Livewire\Livewire;
 
@@ -128,4 +129,37 @@ test('audit logs show old and new values', function (): void {
         ->test(AuditLogViewer::class)
         ->assertSee('Old:')
         ->assertSee('New:');
+});
+
+test('admin can download audit logs as csv with filters', function (): void {
+    $admin = User::factory()->admin()->create();
+    // Log with actor and ticket
+    AuditLog::factory()->create([
+        'action' => 'test_action',
+        'actor_user_id' => $admin->id,
+        'ticket_id' => Ticket::factory()->create()->id,
+    ]);
+
+    Livewire::actingAs($admin)
+        ->test(AuditLogViewer::class)
+        ->set('search', 'test')
+        ->set('actionFilter', 'test_action')
+        ->call('downloadCsv')
+        ->assertFileDownloaded('audit_logs.csv');
+});
+
+test('admin can download audit logs as csv without filters', function (): void {
+    $admin = User::factory()->admin()->create();
+
+    // Log with no actor (System) and no ticket (N/A)
+    AuditLog::factory()->create([
+        'action' => 'system_action',
+        'actor_user_id' => null,
+        'ticket_id' => null,
+    ]);
+
+    Livewire::actingAs($admin)
+        ->test(AuditLogViewer::class)
+        ->call('downloadCsv')
+        ->assertFileDownloaded('audit_logs.csv');
 });

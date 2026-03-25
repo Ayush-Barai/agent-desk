@@ -31,6 +31,15 @@ final class AgentTicketList extends Component
     #[Url]
     public string $scope = 'mine';
 
+    public function mount(): void
+    {
+        /** @var User $user */
+        $user = Auth::user();
+        if ($user->isAdmin()) {
+            $this->scope = 'all';
+        }
+    }
+
     public function updatedSearch(): void
     {
         $this->resetPage();
@@ -96,6 +105,17 @@ final class AgentTicketList extends Component
     public function getPriorities(): array
     {
         return TicketPriority::cases();
+    }
+
+    public function deleteTicket(Ticket $ticket): void
+    {
+        /** @var User $user */
+        $user = Auth::user();
+        abort_unless($user->isAdmin(), 403);
+
+        $ticket->delete();
+
+        $this->dispatch('ticket-deleted');
     }
 
     public function render(): View

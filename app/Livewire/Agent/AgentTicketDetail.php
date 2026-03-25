@@ -804,6 +804,19 @@ final class AgentTicketDetail extends Component
         $this->remainingAiAttempts = 0;
     }
 
+    public function deleteTicket(): void
+    {
+        /** @var User $user */
+        $user = Auth::user();
+        abort_unless($user->isAdmin(), 403);
+
+        $ticket = Ticket::query()->findOrFail($this->ticketId);
+        $ticket->delete();
+
+        session()->flash('success', 'Ticket deleted successfully.');
+        $this->redirect(route('agent.tickets.index'), navigate: true);
+    }
+
     public function render(): View
     {
         return view('livewire.agent.agent-ticket-detail', [

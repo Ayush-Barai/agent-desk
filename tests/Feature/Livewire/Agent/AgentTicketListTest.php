@@ -167,3 +167,35 @@ test('agent ticket list resets page on filter changes', function (): void {
         ->set('scope', 'all')
         ->assertSet('scope', 'all');
 });
+
+test('admin can delete ticket from list', function (): void {
+    $admin = User::factory()->admin()->create();
+    $ticket = Ticket::factory()->create();
+
+    Livewire::actingAs($admin)
+        ->test(AgentTicketList::class)
+        ->call('deleteTicket', $ticket)
+        ->assertDispatched('ticket-deleted');
+
+    $this->assertDatabaseMissing('tickets', ['id' => $ticket->id]);
+});
+
+test('agent cannot delete ticket from list', function (): void {
+    $agent = User::factory()->agent()->create();
+    $ticket = Ticket::factory()->create();
+
+    Livewire::actingAs($agent)
+        ->test(AgentTicketList::class)
+        ->call('deleteTicket', $ticket)
+        ->assertForbidden();
+
+    $this->assertDatabaseHas('tickets', ['id' => $ticket->id]);
+});
+
+test('admin scope defaults to all', function (): void {
+    $admin = User::factory()->admin()->create();
+
+    Livewire::actingAs($admin)
+        ->test(AgentTicketList::class)
+        ->assertSet('scope', 'all');
+});
