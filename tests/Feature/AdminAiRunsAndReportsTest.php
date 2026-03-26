@@ -174,7 +174,7 @@ test('ai run list shows empty state', function (): void {
 
     Livewire::actingAs($admin)
         ->test(AiRunList::class)
-        ->assertSee('No AI runs found.');
+        ->assertSee('No AI runs found');
 });
 
 test('ai run list resets page on search', function (): void {

@@ -96,7 +96,7 @@ test('triage queue shows empty state when no tickets', function (): void {
 
     Livewire::actingAs($agent)
         ->test(TriageQueue::class)
-        ->assertSee('No tickets in triage queue.');
+        ->assertSee('Queue is empty');
 });
 
 test('triage queue shows requester and category', function (): void {

@@ -16,11 +16,11 @@
         <div class="w-[65%] flex flex-col border-r border-gray-200">
             
             {{-- Tab Bar (Sticky top) --}}
-            <div class="border-b border-gray-200 bg-gray-50 flex-none">
-                <nav class="flex" aria-label="Tabs">
+            <div class="border-b border-gray-100 bg-white/80 backdrop-blur-md z-10 flex-none px-4 pt-2">
+                <nav class="flex overflow-x-auto gap-2" aria-label="Tabs" style="scrollbar-width: none;">
                     <button @click="activeTab = 'conversation'" 
-                        :class="{'border-indigo-500 text-indigo-600 bg-white ring-inset ring-1 ring-gray-100 ring-b-0': activeTab === 'conversation', 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 hover:bg-gray-100': activeTab !== 'conversation'}" 
-                        class="px-6 py-3 text-center border-b-2 font-medium text-sm transition-colors cursor-pointer outline-none">
+                        :class="{'bg-indigo-50 text-indigo-700 font-bold': activeTab === 'conversation', 'text-gray-500 hover:text-gray-900 hover:bg-gray-50': activeTab !== 'conversation'}" 
+                        class="px-4 py-2.5 rounded-t-xl text-center font-semibold text-xs sm:text-sm transition-all cursor-pointer outline-none border-b-2" :style="{ borderColor: activeTab === 'conversation' ? '#4f46e5' : 'transparent' }">
                         Conversation
                     </button>
                 </nav>
@@ -28,28 +28,40 @@
 
             {{-- Scrollable Viewing Area --}}
             <div class="flex-1 overflow-y-auto p-6 bg-white" id="conversation-container">
-                <div x-show="activeTab === 'conversation'" class="space-y-4">
+                <div x-show="activeTab === 'conversation'" class="space-y-6 flex flex-col">
                     @forelse($threadMessages as $msg)
-                        <div wire:key="msg-{{ $msg->id }}" class="rounded-lg border border-gray-200 p-4 {{ $msg->user_id === $ticket->requester_id ? 'bg-blue-50/50' : 'bg-white shadow-sm' }}">
-                            <div class="flex items-center justify-between mb-2">
-                                <span class="text-sm font-semibold text-gray-900">
-                                    {{ $msg->author?->name ?? 'Unknown' }}
-                                    @if($msg->user_id === $ticket->requester_id)
-                                        <span class="ml-1 text-[10px] uppercase tracking-wider text-blue-600 font-bold bg-blue-100 px-1.5 py-0.5 rounded">You</span>
-                                    @else
-                                        <span class="ml-1 text-[10px] uppercase tracking-wider text-gray-500 font-bold bg-gray-100 px-1.5 py-0.5 rounded">Support</span>
-                                    @endif
-                                </span>
-                                <span class="text-xs text-gray-400">{{ $msg->created_at->diffForHumans() }}</span>
+                        @php
+                            $isRequester = $msg->user_id === $ticket->requester_id;
+                        @endphp
+                        <div wire:key="msg-{{ $msg->id }}" class="flex {{ $isRequester ? 'justify-end' : 'justify-start' }}">
+                            <div class="max-w-[85%] sm:max-w-[75%] rounded-2xl p-5 shadow-sm {{ $isRequester ? 'bg-indigo-50 border border-indigo-100 rounded-tr-sm text-indigo-900' : 'bg-white border border-gray-200 rounded-tl-sm text-gray-800' }}">
+                                <div class="flex items-center justify-between mb-3 gap-4 border-b {{ $isRequester ? 'border-indigo-200/50 pb-2' : 'border-gray-100 pb-2' }}">
+                                    <div class="flex items-center gap-2">
+                                        <div class="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-white {{ $isRequester ? 'bg-indigo-600' : 'bg-gray-400' }}">
+                                            {{ substr($msg->author?->name ?? 'U', 0, 2) }}
+                                        </div>
+                                        <span class="text-sm font-bold {{ $isRequester ? 'text-indigo-900' : 'text-gray-900' }}">
+                                            {{ $isRequester ? 'You' : ($msg->author?->name ?? 'Support') }}
+                                        </span>
+                                    </div>
+                                    <span class="text-[11px] font-medium {{ $isRequester ? 'text-indigo-400/80' : 'text-gray-400' }}">
+                                        {{ $msg->created_at->format('M j, g:i A') }}
+                                    </span>
+                                </div>
+                                <div class="text-[15px] max-w-none prose prose-sm {{ $isRequester ? 'text-indigo-900' : 'text-gray-800' }}">
+                                    {!! nl2br(e($msg->body)) !!}
+                                </div>
                             </div>
-                            <div class="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">{{ $msg->body }}</div>
                         </div>
                     @empty
-                        <div class="flex flex-col items-center justify-center h-full py-12 text-gray-400">
-                            <svg class="w-12 h-12 mb-3 opacity-20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                            </svg>
-                            <p class="text-sm">No messages in this conversation yet.</p>
+                        <div class="flex flex-col items-center justify-center py-12 text-center text-gray-400">
+                            <div class="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4">
+                                <svg class="w-8 h-8 text-indigo-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                                </svg>
+                            </div>
+                            <p class="text-gray-500 font-medium">No messages in this conversation yet.</p>
+                            <p class="text-xs text-gray-400 mt-1">Start the conversation by replying below.</p>
                         </div>
                     @endforelse
                 </div>

@@ -95,7 +95,7 @@ final class AuditLogViewer extends Component
             $file = fopen('php://output', 'w');
 
             if ($file !== false) {
-                fputcsv($file, ['ID', 'Date', 'Actor', 'Action', 'Ticket ID', 'Old Values', 'New Values'], escape: '\\');
+                fputcsv($file, ['ID', 'Date', 'Actor', 'Action', 'Summary', 'Ticket ID', 'Old Values', 'New Values'], escape: '\\');
 
                 $query->chunk(500, function (Collection $logs) use ($file): void {
                     /** @var Collection<int, AuditLog> $logs */
@@ -105,6 +105,7 @@ final class AuditLogViewer extends Component
                             $log->created_at->toDateTimeString(),
                             $log->actor ? $log->actor->name : 'System',
                             $log->action,
+                            $log->getSummary(),
                             $log->ticket_id ?? 'N/A',
                             json_encode($log->old_values_json),
                             json_encode($log->new_values_json),

@@ -1,4 +1,4 @@
-<div class="h-[calc(100vh-14rem)] min-h-[600px] flex flex-col gap-4">
+<div class="h-[calc(100vh-4rem)] min-h-[700px] flex flex-col gap-4">
     {{-- Rate Limit Alert --}}
     @if($isRateLimited)
         <div class="bg-red-50 border border-red-200 rounded-lg p-4 flex-none">
@@ -43,59 +43,95 @@
                 })
             })
         "
-        class="flex flex-1 overflow-hidden bg-white shadow-sm sm:rounded-xl border border-gray-200">
+        class="flex flex-1 min-h-0 overflow-hidden bg-white shadow-sm sm:rounded-xl border border-gray-200">
         
         {{-- Left Workspace (65%) --}}
-        <div class="w-[65%] flex flex-col border-r border-gray-200">
+        <div class="w-[65%] grid grid-rows-[auto_1fr_auto] min-h-0 border-r border-gray-100 bg-white overflow-hidden">
             
             {{-- Tab Bar (Sticky top) --}}
-            <div class="border-b border-gray-200 bg-gray-50 flex-none">
-                <nav class="flex overflow-x-auto" aria-label="Tabs" style="scrollbar-width: none;">
-                    <button @click="setTab('public')" :class="{'border-indigo-500 text-indigo-600 bg-white ring-inset ring-1 ring-gray-100 ring-b-0': activeTab === 'public', 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 hover:bg-gray-100': activeTab !== 'public'}" class="w-1/5 shrink-0 py-3 px-2 text-center border-b-2 font-medium text-xs sm:text-sm transition-colors cursor-pointer outline-none">Public Chat</button>
-                    <button @click="setTab('internal')" :class="{'border-yellow-500 text-yellow-600 bg-white ring-inset ring-1 ring-gray-100 ring-b-0': activeTab === 'internal', 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 hover:bg-gray-100': activeTab !== 'internal'}" class="w-1/5 shrink-0 py-3 px-2 text-center border-b-2 font-medium text-xs sm:text-sm transition-colors cursor-pointer outline-none">Internal Notes</button>
-                    <button @click="setTab('ai_triage')" :class="{'border-purple-500 text-purple-600 bg-white ring-inset ring-1 ring-gray-100 ring-b-0': activeTab === 'ai_triage', 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 hover:bg-gray-100': activeTab !== 'ai_triage'}" class="w-1/5 shrink-0 py-3 px-2 text-center border-b-2 font-medium text-xs sm:text-sm transition-colors cursor-pointer outline-none">AI Triage</button>
-                    <button @click="setTab('ai_draft')" :class="{'border-purple-500 text-purple-600 bg-white ring-inset ring-1 ring-gray-100 ring-b-0': activeTab === 'ai_draft', 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 hover:bg-gray-100': activeTab !== 'ai_draft'}" class="w-1/5 shrink-0 py-3 px-2 text-center border-b-2 font-medium text-xs sm:text-sm transition-colors cursor-pointer outline-none">AI Generated Reply</button>
-                    <button @click="setTab('summary')" :class="{'border-indigo-500 text-indigo-600 bg-white ring-inset ring-1 ring-gray-100 ring-b-0': activeTab === 'summary', 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 hover:bg-gray-100': activeTab !== 'summary'}" class="w-1/5 shrink-0 py-3 px-2 text-center border-b-2 font-medium text-xs sm:text-sm transition-colors overflow-hidden text-ellipsis whitespace-nowrap cursor-pointer outline-none" title="Summary of the conversation">Summary</button>
+            <div class="border-b border-gray-100 bg-white/80 backdrop-blur-md z-10 px-4 pt-2">
+                <nav class="flex overflow-x-auto gap-2" aria-label="Tabs" style="scrollbar-width: none;">
+                    <button @click="setTab('public')" :class="{'bg-indigo-50 text-indigo-700 font-bold': activeTab === 'public', 'text-gray-500 hover:text-gray-900 hover:bg-gray-50': activeTab !== 'public'}" class="px-4 py-2.5 rounded-t-xl text-center font-semibold text-xs sm:text-sm transition-all cursor-pointer outline-none border-b-2" :style="{ borderColor: activeTab === 'public' ? '#4f46e5' : 'transparent' }">Public Chat</button>
+                    <button @click="setTab('internal')" :class="{'bg-yellow-50 text-yellow-700 font-bold': activeTab === 'internal', 'text-gray-500 hover:text-gray-900 hover:bg-gray-50': activeTab !== 'internal'}" class="px-4 py-2.5 rounded-t-xl text-center font-semibold text-xs sm:text-sm transition-all cursor-pointer outline-none border-b-2" :style="{ borderColor: activeTab === 'internal' ? '#eab308' : 'transparent' }">Internal Notes</button>
+                    <button @click="setTab('ai_triage')" :class="{'bg-purple-50 text-purple-700 font-bold': activeTab === 'ai_triage', 'text-gray-500 hover:text-gray-900 hover:bg-gray-50': activeTab !== 'ai_triage'}" class="px-4 py-2.5 rounded-t-xl text-center font-semibold text-xs sm:text-sm transition-all cursor-pointer outline-none border-b-2" :style="{ borderColor: activeTab === 'ai_triage' ? '#9333ea' : 'transparent' }">AI Triage</button>
+                    <button @click="setTab('ai_draft')" :class="{'bg-purple-50 text-purple-700 font-bold': activeTab === 'ai_draft', 'text-gray-500 hover:text-gray-900 hover:bg-gray-50': activeTab !== 'ai_draft'}" class="px-4 py-2.5 rounded-t-xl text-center font-semibold text-xs sm:text-sm transition-all cursor-pointer outline-none border-b-2" :style="{ borderColor: activeTab === 'ai_draft' ? '#9333ea' : 'transparent' }">AI Generated Reply</button>
+                    <button @click="setTab('summary')" :class="{'bg-indigo-50 text-indigo-700 font-bold': activeTab === 'summary', 'text-gray-500 hover:text-gray-900 hover:bg-gray-50': activeTab !== 'summary'}" class="px-4 py-2.5 rounded-t-xl text-center font-semibold text-xs sm:text-sm transition-all overflow-hidden text-ellipsis whitespace-nowrap cursor-pointer outline-none border-b-2" :style="{ borderColor: activeTab === 'summary' ? '#4f46e5' : 'transparent' }" title="Summary of the conversation">Summary</button>
                 </nav>
             </div>
 
             {{-- Scrollable Viewing Area --}}
-            <div class="flex-1 overflow-y-auto p-6 bg-white">
+            <div class="overflow-y-auto p-6 bg-white min-h-0">
                 
                 {{-- Public Thread --}}
-                <div x-show="activeTab === 'public'" x-cloak class="space-y-4">
+                <div x-show="activeTab === 'public'" x-cloak class="space-y-6 flex flex-col">
                     @forelse($publicThread as $msg)
-                        <div wire:key="pub-{{ $msg->id }}" class="rounded-lg border border-gray-200 p-4 {{ $msg->user_id === $ticket->requester_id ? 'bg-blue-50' : 'bg-gray-50' }}">
-                            <div class="flex items-center justify-between mb-2">
-                                <span class="text-sm font-medium text-gray-900">
-                                    {{ $msg->author?->name ?? 'Unknown' }}
-                                    @if($msg->user_id === $ticket->requester_id)
-                                        <span class="ml-1 text-xs text-blue-600">(Requester)</span>
-                                    @else
-                                        <span class="ml-1 text-xs text-gray-500">(Agent)</span>
-                                    @endif
-                                </span>
-                                <span class="text-xs text-gray-500">{{ $msg->created_at->diffForHumans() }}</span>
+                        @php
+                            $isRequester = $msg->user_id === $ticket->requester_id;
+                        @endphp
+                        <div wire:key="pub-{{ $msg->id }}" class="flex {{ $isRequester ? 'justify-start' : 'justify-end' }}">
+                            <div class="max-w-[85%] sm:max-w-[75%] rounded-2xl p-5 shadow-sm {{ $isRequester ? 'bg-white border border-gray-200 rounded-tl-sm' : 'bg-indigo-50 border border-indigo-100 rounded-tr-sm text-indigo-900' }}">
+                                <div class="flex items-center justify-between mb-3 gap-4 border-b {{ $isRequester ? 'border-gray-100 pb-2' : 'border-indigo-200/50 pb-2' }}">
+                                    <div class="flex items-center gap-2">
+                                        <div class="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-white {{ $isRequester ? 'bg-gray-400' : 'bg-indigo-600' }}">
+                                            {{ substr($msg->author?->name ?? 'U', 0, 2) }}
+                                        </div>
+                                        <span class="text-sm font-bold {{ $isRequester ? 'text-gray-900' : 'text-indigo-900' }}">
+                                            {{ $msg->author?->name ?? 'Unknown' }}
+                                        </span>
+                                    </div>
+                                    <span class="text-[11px] font-medium {{ $isRequester ? 'text-gray-400' : 'text-indigo-400/80' }}">
+                                        {{ $msg->created_at->format('M j, g:i A') }}
+                                    </span>
+                                </div>
+                                <div class="text-[15px] max-w-none prose prose-sm {{ $isRequester ? 'text-gray-800' : 'text-indigo-900' }}">
+                                    {!! nl2br(e($msg->body)) !!}
+                                </div>
                             </div>
-                            <div class="text-sm text-gray-700 whitespace-pre-wrap">{{ $msg->body }}</div>
                         </div>
                     @empty
-                        <p class="text-gray-500 text-sm">No public messages yet.</p>
+                        <div class="flex flex-col items-center justify-center py-12 text-center">
+                            <div class="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4">
+                                <svg class="w-8 h-8 text-indigo-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                                </svg>
+                            </div>
+                            <p class="text-gray-500 font-medium">No public messages yet.</p>
+                            <p class="text-xs text-gray-400 mt-1">Start the conversation by replying below.</p>
+                        </div>
                     @endforelse
                 </div>
 
                 {{-- Internal Notes --}}
-                <div x-show="activeTab === 'internal'" x-cloak class="space-y-4">
+                <div x-show="activeTab === 'internal'" x-cloak class="space-y-6 flex flex-col">
                     @forelse($internalNotes as $note)
-                        <div wire:key="note-{{ $note->id }}" class="rounded-lg border border-yellow-200 bg-yellow-50 p-4">
-                            <div class="flex items-center justify-between mb-2">
-                                <span class="text-sm font-medium text-gray-900">{{ $note->author?->name ?? 'Unknown' }}</span>
-                                <span class="text-xs text-gray-500">{{ $note->created_at->diffForHumans() }}</span>
+                        <div wire:key="note-{{ $note->id }}" class="flex justify-end">
+                            <div class="max-w-[85%] sm:max-w-[75%] rounded-2xl bg-gradient-to-br from-yellow-50 to-amber-50 border border-amber-200/50 p-5 shadow-sm rounded-tr-sm">
+                                <div class="flex items-center justify-between mb-3 gap-4 border-b border-amber-200/50 pb-2">
+                                    <div class="flex items-center gap-2">
+                                        <div class="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-amber-700 bg-amber-200/70">
+                                            {{ substr($note->author?->name ?? 'U', 0, 2) }}
+                                        </div>
+                                        <span class="text-sm font-bold text-amber-900">
+                                            {{ $note->author?->name ?? 'Unknown' }}
+                                        </span>
+                                    </div>
+                                    <span class="text-[11px] font-medium text-amber-600/70">
+                                        {{ $note->created_at->format('M j, g:i A') }}
+                                    </span>
+                                </div>
+                                <div class="text-[15px] text-amber-900 whitespace-pre-wrap leading-relaxed">{{ $note->body }}</div>
                             </div>
-                            <div class="text-sm text-gray-700 whitespace-pre-wrap">{{ $note->body }}</div>
                         </div>
                     @empty
-                        <p class="text-gray-500 text-sm">No internal notes.</p>
+                        <div class="flex flex-col items-center justify-center py-12 text-center mt-4">
+                            <div class="w-16 h-16 bg-amber-50 rounded-full flex items-center justify-center mb-4">
+                                <svg class="w-8 h-8 text-amber-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                                </svg>
+                            </div>
+                            <p class="text-gray-500 font-medium">No internal notes.</p>
+                            <p class="text-xs text-gray-400 mt-1">Leave a hidden note for your team below.</p>
+                        </div>
                     @endforelse
                 </div>
 
@@ -361,7 +397,7 @@
                         </label>
                     </div>
 
-                    <div><textarea wire:model.live="replyBody" wire:key="ticket-reply-textarea-{{ $ticketId }}" rows="4" class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" placeholder="{{ $replyType === 'internal' ? 'Add an internal note...' : 'Type your reply...' }}"></textarea>@error('replyBody') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror</div>
+                    <div><textarea wire:model.live="replyBody" wire:key="ticket-reply-textarea-{{ $ticketId }}" rows="4" class="w-full max-h-64 rounded-xl border-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm transition-all" placeholder="{{ $replyType === 'internal' ? 'Add an internal note...' : 'Type your reply...' }}"></textarea>@error('replyBody')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror</div>
 
                     {{-- Macro Insertion --}}
                     @if($replyType === 'public' && count($macros) > 0)
@@ -434,46 +470,99 @@
         </div>
 
         {{-- Right Sidebar (35%) --}}
-        <div class="w-[35%] overflow-y-auto bg-gray-50/50 p-6 space-y-6">
+        <div class="w-[35%] overflow-y-auto bg-gray-50/30 p-6 space-y-6 border-l border-gray-100 relative">
             
+            {{-- Escalation Flag --}}
+            @if($ticket->escalation_required)
+                <div class="bg-red-50 border border-red-200 rounded-2xl shadow-sm ring-1 ring-red-200/50">
+                    <div class="px-5 py-4">
+                        <div class="flex items-center gap-2 mb-1">
+                            <svg class="w-4 h-4 text-red-600" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 000 1.06L8.94 9l-.66.72a.75.75 0 101.06 1.06L10 10.06l.72.72a.75.75 0 101.06-1.06L11.06 9l.72-.72a.75.75 0 00-1.06-1.06L10 7.94l-.72-.72a.75.75 0 00-1.06 0z" clip-rule="evenodd" />
+                            </svg>
+                            <h4 class="text-sm font-bold text-red-800">Escalation Required</h4>
+                        </div>
+                        <p class="text-xs text-red-700/80 font-medium leading-relaxed">This ticket has been flagged by AI for immediate supervisor attention.</p>
+                    </div>
+                </div>
+            @endif
+
             {{-- Ticket Metadata --}}
-            <div class="bg-white rounded-lg shadow-sm border border-gray-200">
-                <div class="px-4 py-3 border-b border-gray-200 bg-gray-50/50 flex flex-col sm:flex-row sm:items-center sm:justify-between">
-                    <h4 class="text-sm font-semibold text-gray-900 truncate" title="{{ $ticket->subject }}">{{ $ticket->subject }}</h4>
-                    <div class="flex items-center gap-1 mt-1 sm:mt-0">
-                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium {{ $ticket->status->color() }}">
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100/50 overflow-hidden ring-1 ring-black/5">
+                <div class="px-5 py-4 border-b border-gray-100 bg-gradient-to-b from-white to-gray-50/50">
+                    <h4 class="text-[15px] font-bold text-gray-900 line-clamp-2 leading-tight" title="{{ $ticket->subject }}">{{ $ticket->subject }}</h4>
+                    <div class="flex flex-wrap items-center gap-2 mt-3 block">
+                        <span class="inline-flex flex-shrink-0 items-center px-2.5 py-1 rounded-md text-[11px] font-bold uppercase tracking-wider {{ $ticket->status->color() }} ring-1 ring-inset ring-black/5 shadow-sm">
                             {{ $ticket->status->label() }}
                         </span>
                         @if($ticket->priority)
-                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium {{ $ticket->priority->color() }}">
+                        <span class="inline-flex flex-shrink-0 items-center px-2.5 py-1 rounded-md text-[11px] font-bold uppercase tracking-wider {{ $ticket->priority->color() }} ring-1 ring-inset ring-black/5 shadow-sm">
                             {{ $ticket->priority->label() }}
                         </span>
                         @endif
                     </div>
                 </div>
-                <div class="p-4">
-                    <p class="text-xs text-gray-500 mb-4 pb-2 border-b border-gray-100">Created {{ $ticket->created_at->diffForHumans() }} by <span class="font-medium text-gray-900">{{ $ticket->requester?->name ?? '—' }}</span></p>
-
-                    <div class="space-y-4">
+                <div class="p-5">
+                    <div class="flex items-center gap-3 text-xs text-gray-500 mb-5 pb-5 border-b border-gray-100 border-dashed">
+                        <div class="w-8 h-8 rounded-full bg-gray-100 shrink-0 flex items-center justify-center font-bold text-gray-600">
+                             {{ substr($ticket->requester?->name ?? 'U', 0, 1) }}
+                        </div>
                         <div>
-                            <label class="block text-xs font-medium text-gray-500 uppercase mb-1">Status</label>
-                            <select wire:model="status"
-                                class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
-                                @foreach($statuses as $s)
-                                    <option value="{{ $s->value }}">{{ $s->label() }}</option>
-                                @endforeach
-                            </select>
+                            <p class="font-bold text-gray-900 text-[13px]">{{ $ticket->requester?->name ?? '—' }}</p>
+                            <p class="mt-0.5">Created {{ $ticket->created_at->diffForHumans() }}</p>
+                        </div>
+                    </div>
+
+                    <div class="space-y-5">
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">Status</label>
+                                <select wire:model="status"
+                                    class="w-full rounded-xl border-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm font-medium text-gray-700 bg-white transition-shadow">
+                                    @foreach($statuses as $s)
+                                        <option value="{{ $s->value }}">{{ $s->label() }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+                            <div>
+                                <label class="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">Priority</label>
+                                <select wire:model="priority"
+                                    class="w-full rounded-xl border-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm font-medium text-gray-700 bg-white transition-shadow">
+                                    <option value="">None</option>
+                                    @foreach($priorities as $p)
+                                        <option value="{{ $p->value }}">{{ $p->label() }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
                         </div>
 
-                        <div>
-                            <label class="block text-xs font-medium text-gray-500 uppercase mb-1">Priority</label>
-                            <select wire:model="priority"
-                                class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
-                                <option value="">None</option>
-                                @foreach($priorities as $p)
-                                    <option value="{{ $p->value }}">{{ $p->label() }}</option>
-                                @endforeach
-                            </select>
+                        {{-- Assignment Integrated --}}
+                        <div class="pt-2 border-t border-gray-100 border-dashed">
+                            <label class="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">Assignment</label>
+                            <div class="flex flex-col gap-2">
+                                <select wire:model="assigneeId"
+                                    class="w-full rounded-xl border-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm font-medium text-gray-700 bg-white transition-shadow">
+                                    <option value="">Unassigned</option>
+                                    @foreach($agents as $agent)
+                                        <option value="{{ $agent->id }}">{{ $agent->name }}</option>
+                                    @endforeach
+                                </select>
+                                <div class="flex gap-2">
+                                    <button wire:click="assignTicket" type="button"
+                                        wire:loading.attr="disabled"
+                                        class="flex-1 inline-flex justify-center items-center px-3 py-1.5 bg-gray-600 border border-transparent rounded-lg font-bold text-[10px] text-white uppercase tracking-widest hover:bg-gray-700 transition shadow-sm">
+                                        <span wire:loading.remove wire:target="assignTicket">Assign</span>
+                                        <span wire:loading wire:target="assignTicket">...</span>
+                                    </button>
+                                    <button wire:click="assignToMe" type="button"
+                                        wire:loading.attr="disabled"
+                                        class="flex-1 inline-flex justify-center items-center px-3 py-1.5 bg-indigo-600 border border-transparent rounded-lg font-bold text-[10px] text-white uppercase tracking-widest hover:bg-indigo-700 transition shadow-sm">
+                                        <span wire:loading.remove wire:target="assignToMe">To Me</span>
+                                        <span wire:loading wire:target="assignToMe">...</span>
+                                    </button>
+                                </div>
+                            </div>
                         </div>
 
                         <div>
@@ -487,18 +576,29 @@
                             </select>
                         </div>
 
-                        <div>
-                            <label class="block text-xs font-medium text-gray-500 uppercase mb-1">Tags</label>
-                            <div class="space-y-1 max-h-32 overflow-y-auto pr-2" style="scrollbar-width: thin; scrollbar-color: #cbd5e1 transparent;">
-                                @foreach($allTags as $tag)
-                                    <label class="flex items-center">
-                                        <input type="checkbox" wire:model="selectedTagIds" value="{{ $tag->id }}"
-                                            class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 shadow-sm">
-                                        <span class="ml-2 text-sm text-gray-700">{{ $tag->name }}</span>
-                                    </label>
-                                @endforeach
+                        {{-- Attachments Integrated --}}
+                        @if($attachments->isNotEmpty())
+                            <div class="pt-4 border-t border-gray-100 border-dashed">
+                                <label class="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">Attachments</label>
+                                <ul class="space-y-2">
+                                    @foreach($attachments as $attachment)
+                                        <li wire:key="att-{{ $attachment->id }}" class="flex flex-col gap-0.5 rounded-xl border border-gray-100 bg-gray-50 px-3 py-2">
+                                            <div class="flex items-center justify-between gap-2">
+                                                <a href="{{ route('attachments.download', $attachment) }}" 
+                                                    class="text-xs font-bold text-indigo-700 hover:text-indigo-900 flex items-center gap-1.5 truncate max-w-[80%] group"
+                                                    target="_blank" rel="noopener noreferrer">
+                                                    <svg class="w-3.5 h-3.5 shrink-0 text-indigo-400 group-hover:text-indigo-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                                    </svg>
+                                                    <span class="truncate">{{ $attachment->original_name }}</span>
+                                                </a>
+                                                <span class="shrink-0 text-[10px] font-medium text-gray-400">{{ number_format($attachment->size_bytes / 1024, 0) }}K</span>
+                                            </div>
+                                        </li>
+                                    @endforeach
+                                </ul>
                             </div>
-                        </div>
+                        @endif
 
                         <div class="pt-2">
                             <button wire:click="updateMetadata" type="button"
@@ -520,76 +620,6 @@
                     </div>
                 </div>
             </div>
-
-            {{-- Assignment --}}
-            <div class="bg-white rounded-lg shadow-sm border border-gray-200">
-                <div class="px-4 py-3 border-b border-gray-200 bg-gray-50/50">
-                    <h4 class="text-sm font-semibold text-gray-900">Assignment</h4>
-                </div>
-                <div class="p-4 space-y-3">
-                    <select wire:model="assigneeId"
-                        class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
-                        <option value="">Unassigned</option>
-                        @foreach($agents as $agent)
-                            <option value="{{ $agent->id }}">{{ $agent->name }}</option>
-                        @endforeach
-                    </select>
-
-                    <div class="flex gap-2">
-                        <button wire:click="assignTicket" type="button"
-                            wire:loading.attr="disabled"
-                            class="flex-1 inline-flex justify-center items-center px-3 py-2 bg-gray-800 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 focus-visible:outline-none focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition ease-in-out duration-200">
-                            <span wire:loading.remove wire:target="assignTicket">Assign</span>
-                            <span wire:loading wire:target="assignTicket">...</span>
-                        </button>
-                        <button wire:click="assignToMe" type="button"
-                            wire:loading.attr="disabled"
-                            class="flex-1 inline-flex justify-center items-center px-3 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 focus-visible:outline-none focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition ease-in-out duration-200">
-                            <span wire:loading.remove wire:target="assignToMe">Assign to Me</span>
-                            <span wire:loading wire:target="assignToMe">...</span>
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            {{-- Escalation Flag --}}
-            @if($ticket->escalation_required)
-                <div class="bg-red-50 border border-red-200 rounded-lg shadow-sm">
-                    <div class="p-4">
-                        <h4 class="text-sm font-semibold text-red-800 mb-1">Escalation Required</h4>
-                        <p class="text-xs text-red-700">This ticket has been flagged for escalation.</p>
-                    </div>
-                </div>
-            @endif
-
-            {{-- Attachments --}}
-            @if($attachments->isNotEmpty())
-                <div class="bg-white rounded-lg shadow-sm border border-gray-200">
-                    <div class="px-4 py-3 border-b border-gray-200 bg-gray-50/50">
-                        <h4 class="text-sm font-semibold text-gray-900">Attachments</h4>
-                    </div>
-                    <div class="p-4">
-                        <ul class="space-y-2">
-                            @foreach($attachments as $attachment)
-                                <li wire:key="att-{{ $attachment->id }}" class="flex flex-col gap-1 rounded-md border border-gray-100 bg-gray-50 px-3 py-2">
-                                    <div class="flex items-center justify-between">
-                                        <a href="{{ route('attachments.download', $attachment) }}" 
-                                            class="text-sm font-medium text-indigo-600 hover:text-indigo-900 hover:underline flex items-center gap-1 truncate max-w-[80%]"
-                                            title="Download {{ $attachment->original_name }}">
-                                            <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                                            </svg>
-                                            <span class="truncate">{{ $attachment->original_name }}</span>
-                                        </a>
-                                        <span class="shrink-0 text-xs text-gray-500">{{ number_format($attachment->size_bytes / 1024, 1) }} KB</span>
-                                    </div>
-                                    <span class="text-[10px] text-gray-400 pl-5">Uploaded by: {{ $attachment->uploader?->name ?? 'Unknown' }}</span>
-                                </li>
-                            @endforeach
-                        </ul>
-                    </div>
-                </div>
-            @endif
 
             {{-- Danger Zone --}}
             @if(auth()->user()->isAdmin())

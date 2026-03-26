@@ -136,7 +136,7 @@ test('ticket list shows empty state', function (): void {
 
     Livewire::actingAs($agent)
         ->test(AgentTicketList::class)
-        ->assertSee('No tickets found.');
+        ->assertSee('No tickets found');
 });
 
 test('ticket list shows unassigned label', function (): void {

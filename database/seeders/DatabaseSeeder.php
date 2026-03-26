@@ -11,6 +11,7 @@ use App\Enums\TicketPriority;
 use App\Enums\TicketStatus;
 use App\Enums\UserRole;
 use App\Models\AiRun;
+use App\Models\AuditLog;
 use App\Models\Category;
 use App\Models\KnowledgeBaseArticle;
 use App\Models\Macro;
@@ -56,7 +57,23 @@ final class DatabaseSeeder extends Seeder
         Tag::query()->firstOrCreate(['name' => 'urgent'], ['color' => '#f59e0b']);
 
         Macro::query()->firstOrCreate(['title' => 'Greeting'], [
-            'body' => 'Hello! Thank you for reaching out. How can we help you today?',
+            'body' => 'Hello! Thank you for reaching out to AgentDesk. How can we help you today?',
+        ]);
+
+        Macro::query()->firstOrCreate(['title' => 'Closing - Resolved'], [
+            'body' => 'I am glad I could help! I will go ahead and mark this ticket as resolved. Please feel free to reach out if you have any other questions.',
+        ]);
+
+        Macro::query()->firstOrCreate(['title' => 'Request More Information'], [
+            'body' => 'To better assist you, could you please provide more details about the issue? Any screenshots or error messages would be very helpful.',
+        ]);
+
+        Macro::query()->firstOrCreate(['title' => 'Working on it'], [
+            'body' => 'I am currently investigating your request. I will provide an update as soon as I have more information.',
+        ]);
+
+        Macro::query()->firstOrCreate(['title' => 'Billing Clarification'], [
+            'body' => 'I have reviewed your account and can confirm that the invoice charges are for your monthly subscription. Let me know if you need further clarification.',
         ]);
 
         if (SupportTargetConfig::query()->doesntExist()) {
@@ -115,6 +132,16 @@ final class DatabaseSeeder extends Seeder
             ],
         ]);
 
+        AuditLog::query()->create([
+            'actor_user_id' => $requester->id,
+            'ticket_id' => $ticket1->id,
+            'auditable_type' => Ticket::class,
+            'auditable_id' => $ticket1->id,
+            'action' => 'ticket_created',
+            'meta_json' => ['subject' => $ticket1->subject],
+            'created_at' => $ticket1->created_at,
+        ]);
+
         // Ticket 2: Triaged technical support issue
         $ticket2 = Ticket::query()->create([
             'requester_id' => $requester->id,
@@ -157,6 +184,37 @@ final class DatabaseSeeder extends Seeder
             'completed_at' => now()->subHours(1),
         ]);
 
+        AuditLog::query()->create([
+            'actor_user_id' => $requester->id,
+            'ticket_id' => $ticket2->id,
+            'auditable_type' => Ticket::class,
+            'auditable_id' => $ticket2->id,
+            'action' => 'ticket_created',
+            'created_at' => $ticket2->created_at->subMinutes(30),
+        ]);
+
+        AuditLog::query()->create([
+            'actor_user_id' => $agent->id,
+            'ticket_id' => $ticket2->id,
+            'auditable_type' => Ticket::class,
+            'auditable_id' => $ticket2->id,
+            'action' => 'assignment_changed',
+            'old_values_json' => ['assigned_to_user_id' => null],
+            'new_values_json' => ['assigned_to_user_id' => $agent->id],
+            'created_at' => $ticket2->created_at->subMinutes(20),
+        ]);
+
+        AuditLog::query()->create([
+            'actor_user_id' => $agent->id,
+            'ticket_id' => $ticket2->id,
+            'auditable_type' => Ticket::class,
+            'auditable_id' => $ticket2->id,
+            'action' => 'status_changed',
+            'old_values_json' => ['status' => TicketStatus::New->value],
+            'new_values_json' => ['status' => TicketStatus::Triaged->value],
+            'created_at' => $ticket2->triaged_at,
+        ]);
+
         // Ticket 3: In Progress ticket
         $ticket3 = Ticket::query()->create([
             'requester_id' => $requester->id,
@@ -197,6 +255,17 @@ final class DatabaseSeeder extends Seeder
 
         $ticket3->tags()->attach($bugTag?->id);
 
+        AuditLog::query()->create([
+            'actor_user_id' => $agent->id,
+            'ticket_id' => $ticket3->id,
+            'auditable_type' => Ticket::class,
+            'auditable_id' => $ticket3->id,
+            'action' => 'status_changed',
+            'old_values_json' => ['status' => TicketStatus::New->value],
+            'new_values_json' => ['status' => TicketStatus::InProgress->value],
+            'created_at' => $ticket3->first_responded_at,
+        ]);
+
         // Ticket 4: Resolved ticket
         $ticket4 = Ticket::query()->create([
             'requester_id' => $requester->id,
@@ -227,6 +296,17 @@ final class DatabaseSeeder extends Seeder
             'user_id' => $agent->id,
             'type' => TicketMessageType::Public,
             'body' => 'Your subscription has been successfully cancelled as of today. You will receive a refund of $29.99 to your original payment method within 3-5 business days. Thank you for being a customer!',
+        ]);
+
+        AuditLog::query()->create([
+            'actor_user_id' => $agent->id,
+            'ticket_id' => $ticket4->id,
+            'auditable_type' => Ticket::class,
+            'auditable_id' => $ticket4->id,
+            'action' => 'status_changed',
+            'old_values_json' => ['status' => TicketStatus::InProgress->value],
+            'new_values_json' => ['status' => TicketStatus::Resolved->value],
+            'created_at' => $ticket4->resolved_at,
         ]);
 
         /** @var Category|null $generalCategory */

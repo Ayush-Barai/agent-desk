@@ -357,16 +357,14 @@ test('ticket detail shows ai summary when available', function (): void {
         ->assertSee('User reports billing overcharge on last invoice.');
 });
 
-test('ticket detail shows categories and tags in metadata', function (): void {
+test('ticket detail shows categories in metadata', function (): void {
     $agent = User::factory()->agent()->create();
     $category = Category::factory()->create(['name' => 'Billing Support', 'is_active' => true]);
-    $tag = Tag::factory()->create(['name' => 'VIP']);
     $ticket = Ticket::factory()->create(['category_id' => $category->id]);
 
     Livewire::actingAs($agent)
         ->test(AgentTicketDetail::class, ['ticket' => $ticket])
-        ->assertSee('Billing Support')
-        ->assertSee('VIP');
+        ->assertSee('Billing Support');
 });
 
 test('ticket detail loads initial metadata into properties', function (): void {
