@@ -101,6 +101,7 @@ final class AgentTicketDetail extends Component
         return Ticket::query()
             ->with(['category', 'assignee', 'requester', 'tags'])
             ->findOrFail($this->ticketId);
+
     }
 
     /**

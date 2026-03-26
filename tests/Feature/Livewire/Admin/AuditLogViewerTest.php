@@ -117,7 +117,7 @@ test('audit logs show system when no actor', function (): void {
         ->assertSee('System');
 });
 
-test('audit logs show old and new values', function (): void {
+test('audit logs show human-readable summary of changes', function (): void {
     $admin = User::factory()->admin()->create();
     AuditLog::factory()->create([
         'action' => 'status_changed',
@@ -127,8 +127,7 @@ test('audit logs show old and new values', function (): void {
 
     Livewire::actingAs($admin)
         ->test(AuditLogViewer::class)
-        ->assertSee('Old:')
-        ->assertSee('New:');
+        ->assertSee('Status: new → triaged');
 });
 
 test('admin can download audit logs as csv with filters', function (): void {

@@ -1,4 +1,4 @@
-<nav x-data="{ open: false }" class="bg-white border-b border-gray-200 sticky top-0 z-50 shadow-sm">
+<nav x-data="{ open: false }" class="bg-white/80 backdrop-blur-md border-b border-gray-200 sticky top-0 z-50 shadow-sm">
     <!-- Primary Navigation Menu -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between h-16">
@@ -18,47 +18,47 @@
                 <!-- Navigation Links -->
                 <div class="hidden sm:flex sm:items-center sm:gap-1 sm:ml-8">
                     <a href="{{ route('dashboard') }}"
-                        class="inline-flex items-center gap-1.5 px-3 py-2 rounded-md text-sm font-medium transition duration-150 {{ request()->routeIs('dashboard') ? 'bg-indigo-50 text-indigo-700' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100' }}">
+                        class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 {{ request()->routeIs('dashboard') ? 'bg-indigo-50 text-indigo-700 shadow-sm' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100 hover:shadow-sm' }}">
                         Dashboard
                     </a>
 
                     @if(auth()->user()->isRequester())
                         <a href="{{ route('requester.tickets.index') }}"
-                            class="inline-flex items-center gap-1.5 px-3 py-2 rounded-md text-sm font-medium transition duration-150 {{ request()->routeIs('requester.tickets.*') ? 'bg-indigo-50 text-indigo-700' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100' }}">
+                            class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 {{ request()->routeIs('requester.tickets.*') ? 'bg-indigo-50 text-indigo-700 shadow-sm' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100 hover:shadow-sm' }}">
                             My Tickets
                         </a>
                     @endif
 
                     @if(auth()->user()->isAgent() || auth()->user()->isAdmin())
                         <a href="{{ route('agent.tickets.index') }}"
-                            class="inline-flex items-center gap-1.5 px-3 py-2 rounded-md text-sm font-medium transition duration-150 {{ request()->routeIs('agent.tickets.*') ? 'bg-indigo-50 text-indigo-700' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100' }}">
+                            class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 {{ request()->routeIs('agent.tickets.*') ? 'bg-indigo-50 text-indigo-700 shadow-sm' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100 hover:shadow-sm' }}">
                             Ticket Queue
                         </a>
                     @endif
 
                     @if(auth()->user()->isAdmin())
                         <a href="{{ route('admin.categories.index') }}"
-                            class="inline-flex items-center gap-1.5 px-3 py-2 rounded-md text-sm font-medium transition duration-150 {{ request()->routeIs('admin.categories.*') ? 'bg-indigo-50 text-indigo-700' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100' }}">
+                            class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 {{ request()->routeIs('admin.categories.*') ? 'bg-indigo-50 text-indigo-700 shadow-sm' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100 hover:shadow-sm' }}">
                             Categories
                         </a>
                         <a href="{{ route('admin.macros.index') }}"
-                            class="inline-flex items-center gap-1.5 px-3 py-2 rounded-md text-sm font-medium transition duration-150 {{ request()->routeIs('admin.macros.*') ? 'bg-indigo-50 text-indigo-700' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100' }}">
+                            class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 {{ request()->routeIs('admin.macros.*') ? 'bg-indigo-50 text-indigo-700 shadow-sm' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100 hover:shadow-sm' }}">
                             Macros
                         </a>
                         <a href="{{ route('admin.targets.index') }}"
-                            class="inline-flex items-center gap-1.5 px-3 py-2 rounded-md text-sm font-medium transition duration-150 {{ request()->routeIs('admin.targets.*') ? 'bg-indigo-50 text-indigo-700' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100' }}">
+                            class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 {{ request()->routeIs('admin.targets.*') ? 'bg-indigo-50 text-indigo-700 shadow-sm' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100 hover:shadow-sm' }}">
                             Response Targets 
                         </a>
                         <a href="{{ route('admin.kb-articles.index') }}"
-                            class="inline-flex items-center gap-1.5 px-3 py-2 rounded-md text-sm font-medium transition duration-150 {{ request()->routeIs('admin.kb-articles.*') ? 'bg-indigo-50 text-indigo-700' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100' }}">
+                            class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 {{ request()->routeIs('admin.kb-articles.*') ? 'bg-indigo-50 text-indigo-700 shadow-sm' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100 hover:shadow-sm' }}">
                             Knowledge Base
                         </a>
                         <a href="{{ route('admin.ai-runs.index') }}"
-                            class="inline-flex items-center gap-1.5 px-3 py-2 rounded-md text-sm font-medium transition duration-150 {{ request()->routeIs('admin.ai-runs.*') ? 'bg-indigo-50 text-indigo-700' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100' }}">
+                            class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 {{ request()->routeIs('admin.ai-runs.*') ? 'bg-indigo-50 text-indigo-700 shadow-sm' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100 hover:shadow-sm' }}">
                             AI Runs
                         </a>
                         <a href="{{ route('admin.audit-logs.index') }}"
-                            class="inline-flex items-center gap-1.5 px-3 py-2 rounded-md text-sm font-medium transition duration-150 {{ request()->routeIs('admin.audit-logs.*') ? 'bg-indigo-50 text-indigo-700' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100' }}">
+                            class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 {{ request()->routeIs('admin.audit-logs.*') ? 'bg-indigo-50 text-indigo-700 shadow-sm' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100 hover:shadow-sm' }}">
                             Audit Logs
                         </a>
                     @endif
