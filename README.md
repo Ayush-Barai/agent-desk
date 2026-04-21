@@ -16,7 +16,7 @@ AI features assist human agents by automatically triaging tickets and drafting r
 
 ```
 ┌─────────────┐     ┌──────────────────┐     ┌─────────────┐
-│  Livewire   │────▶│  Actions/Jobs    │───▶│  AI Agents  │
+│  Livewire   │───▶│  Actions/Jobs    │───▶│  AI Agents  │
 │  Components │     │  (queued)        │     │  (Groq LLM) │
 └─────────────┘     └──────────────────┘     └─────────────┘
        │                    │                       │
